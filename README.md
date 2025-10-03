@@ -1,154 +1,121 @@
-# ipad-device-orientation
+# iPad Dual Joystick Controls
 
-`ipad-device-orientation` is a React hook package that allows reading iPad device orientation accurately (yaw, pitch, roll).  
-It is designed to handle all 4 iPad screen rotations and compensates for sign changes in beta and gamma angles, providing horizon-relative pitch and roll values.
-
----
+A mobile joystick component for React that supports dual joysticks and action buttons, designed for iPad and touchscreen devices. Fully customizable via a theme.
 
 ## Features
 
-- Provides yaw, pitch, and roll angles in degrees.
-- Supports all 4 iPad orientations:
-    - Portrait
-    - Portrait upside-down
-    - Landscape-left
-    - Landscape-right
-- Horizon-relative pitch and roll calculation.
-- Optional yaw reset.
-- Ready-to-use example component: `OrientationPanel`.
-
----
+- Dual joysticks (left and right) with independent callbacks
+- Up/Down directional buttons
+- A/B action buttons
+- Fully customizable sizes, colors, spacing, and button offsets
+- Supports scaling for different screen sizes
+- Smooth touch handling with dead zone support
 
 ## Installation
 
 ```bash
-npm install ipad-device-orientation
+npm install ipad-dual-joystick
+# or
+yarn add ipad-dual-joystick
 ```
 
-or using yarn:
-
-```bash
-yarn add ipad-device-orientation
-```
-
----
-
-## Hook Usage
+## Usage
 
 ```tsx
-import React from 'react';
-import { useDeviceOrientation } from 'ipad-device-orientation';
-
-const MyComponent = () => {
-  const { yaw, pitch, roll, resetYaw, permissionGranted, requestPermission } = useDeviceOrientation();
-
-  return (
-    <div>
-      {!permissionGranted ? (
-        <button onClick={requestPermission}>Enable Orientation</button>
-      ) : (
-        <div>
-          <div>Yaw: {yaw.toFixed(1)}°</div>
-          <div>Pitch: {pitch.toFixed(1)}°</div>
-          <div>Roll: {roll.toFixed(1)}°</div>
-          <button onClick={resetYaw}>Reset Yaw</button>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-**Notes on values:**
-
-- **Pitch:** horizon = 0°, looking down = -90°, looking up = 90°.
-- **Roll:** horizontal tilt relative to horizon. Small tilts give accurate roll.
-- **Yaw:** based on device alpha with optional offset. Reflects compass heading.
-
----
-
-## Full Example
-
-A sample is available at the github page of this project that illustrates how to wire the hook in an React application
-
----
-
-## Using DeviceOrientationProvider (React Context)
-If your app has multiple components that need device orientation, or if you’re using a router-based application, calling the hook separately in each component may not be ideal. Instead, it can be more convenient to use a context provider. This approach ensures that orientation is tracked once and the values are shared across all components, simplifying your code and preventing multiple event listeners.
-
-**Example:**
-```typescript
-// App.tsx
 import React from "react";
-import { DeviceOrientationProvider } from "ipad-device-orientation";
-import { OrientationPanel } from "./components/OrientationPanel";
-import { AnotherComponent } from "./components/AnotherComponent";
+import { MobileJoystickControls } from "ipad-dual-joystick";
+import { JoystickTheme } from "ipad-dual-joystick/theme";
 
-// Wrapp with DeviceOrientationProvider any component that may require orientation
-const App: React.FC = () => {
-  return (
-          <DeviceOrientationProvider>
-            <OrientationPanel />
-            <AnotherComponent />
-          </DeviceOrientationProvider>
-  );
-};
+const MyGame: React.FC = () => {
+  const handleLeftMove = (dx: number, dy: number) => {
+    console.log("Left joystick:", dx, dy);
+  };
 
-export default App;
-```
-**Consuming the Context**
-```typescript
-import React from "react";
-import { useDeviceOrientationContext } from "ipad-device-orientation";
+  const handleRightMove = (dx: number, dy: number) => {
+    console.log("Right joystick:", dx, dy);
+  };
 
-export const AnotherComponent: React.FC = () => {
-  const { yaw, pitch, roll, resetYaw, permissionGranted, requestPermission } =
-    useDeviceOrientationContext();
+  const theme: Partial<JoystickTheme> = {
+    joystickSize: 140,
+    leftButtons: { dx: 0, dy: 90, tilt: 45 },
+    rightButtons: { dx: 0, dy: 90, tilt: -45 },
+  };
 
   return (
-    <div>
-      <h3>Device Orientation:</h3>
-      <div>Yaw: {yaw.toFixed(1)}°</div>
-      <div>Pitch: {pitch.toFixed(1)}°</div>
-      <div>Roll: {roll.toFixed(1)}°</div>
-      {!permissionGranted && (
-        <button onClick={requestPermission}>Enable Orientation</button>
-      )}
-      <button onClick={resetYaw}>Reset Yaw</button>
-    </div>
+    <MobileJoystickControls
+      onLeftJoystickMove={handleLeftMove}
+      onRightJoystickMove={handleRightMove}
+      onUp={(active) => console.log("Up:", active)}
+      onDown={(active) => console.log("Down:", active)}
+      onButtonA={(active) => console.log("A:", active)}
+      onButtonB={(active) => console.log("B:", active)}
+      theme={theme}
+    />
   );
 };
 ```
-**Benefits**
 
-- Single source of truth: Orientation is tracked only once, even if multiple components consume the context.
-- Persistent state: On iOS, device orientation events require explicit user permission. Once granted, the context remains active across navigation, so components do not need to request permission again.
-- Cleaner code: Components can consume orientation values from the context without each calling useDeviceOrientation individually, reducing duplication and multiple event listeners.
+## Props
 
-## iOS HTTPS Requirement
+| Prop | Type | Description |
+|------|------|-------------|
+| `onLeftJoystickMove` | `(dx: number, dy: number) => void` | Callback for left joystick movement. dx/dy are normalized (-1 to 1) |
+| `onRightJoystickMove` | `(dx: number, dy: number) => void` | Callback for right joystick movement |
+| `onUp` | `(active: boolean) => void` | Callback when up button pressed/released |
+| `onDown` | `(active: boolean) => void` | Callback when down button pressed/released |
+| `onButtonA` | `(active: boolean) => void` | Callback for A button |
+| `onButtonB` | `(active: boolean) => void` | Callback for B button |
+| `dual` | `boolean` | Whether to show the right joystick (default `true`) |
+| `theme` | `Partial<JoystickTheme>` | Optional theme overrides |
 
-On iOS devices, device orientation events **require HTTPS**.  
-Attempting to use the hook on HTTP or file:// will not trigger permission requests.
+## Theme
 
----
+`JoystickTheme` allows you to customize appearance and layout:
 
-## Device Orientation Behavior
+```ts
+interface JoystickTheme {
+    joystickSize?: number;
+    joystickHandleSize?: number;
+    joystickZIndex?: number;
+    joystickOffset?: number;
+    joystickHandleBg?: string;
+    joystickBg?: string;
 
-- **Beta:** tilts front/back; changes with gamma when device near vertical.
-- **Gamma:** tilts left/right; flips sign at ±90° when device is near vertical.
-- **Alpha:** compass heading; affected by gamma and beta at extreme tilts.
-- All calculations are adjusted for screen rotation.
+    buttonSize?: number;
+    buttonGap?: number;
+    buttonBg?: string;
+    buttonBgActive?: string;
+    buttonFontSize?: string;
+    buttonColor?: string;
 
----
+    buttonsUpDownOrder: "up/down" | "down/up";
+    buttonsABOrder: "A/B" | "B/A";
+    leftButtons: { dx: number, dy: number, tilt: number };
+    rightButtons: { dx: number, dy: number, tilt: number };
+}
+```
 
-## Limitations
+### CSS Variables
 
-- GPS or WebXR is not required or used; hook is based on device sensors only.
-- On older iPads, slight inaccuracies may occur near vertical or extreme tilts.
-- Works best when device is held reasonably level for pitch/roll accuracy.
+The component uses CSS variables internally for scaling and positioning:
 
----
-
-## License
-
-MIT
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--scale-factor` | `1` | Device scaling factor |
+| `--joystick-z-index` | `1000` | Joystick z-index |
+| `--joystick-size` | `130px` | Size of joystick base |
+| `--joystick-handle-size` | `50px` | Size of joystick handle |
+| `--joystick-offset` | `30px` | Distance from screen edges |
+| `--button-size` | `60px` | Size of A/B and up/down buttons |
+| `--button-gap` | `50px` | Gap between paired buttons |
+| `--buttonFontSize` | `24px` | Font size for button labels |
+| `--buttonColor` | `white` | Color of button text |
+| `--buttonBg` | `rgba(0,0,0,0.3)` | Button background |
+| `--buttonBgActive` | `rgba(96,77,77,0.6)` | Active button background |
+| `--joystickBg` | `rgba(0,0,0,0.6)` | Joystick base background |
+| `--joystickHandleBg` | `rgba(200,200,200,0.8)` | Joystick handle background |
+| `--base-left-buttons-tilt` | `45deg` | Tilt of left buttons |
+| `--base-left-buttons-dx` | `0px` | Horizontal offset of left buttons |
+| `--base-left-buttons-dy` | `85px` | Vertical offset of left buttons |
+| `--base-right-buttons-tilt` | `-45deg` | Tilt of right buttons |
+| `--base-right-buttons-dx` | `0px` | Horizontal offset
