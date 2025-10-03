@@ -113,7 +113,8 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
         dxRef: React.MutableRefObject<number>,
         dyRef: React.MutableRefObject<number>,
-        elRef: React.RefObject<HTMLDivElement | null>
+        elRef: React.RefObject<HTMLDivElement | null>,
+        callback?: (dx: number, dy: number) => void
     ) => {
         const el = elRef.current;
         if (el && pointerIdRef.current !== null) el.releasePointerCapture?.(pointerIdRef.current);
@@ -122,6 +123,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         setPos({ x: 0, y: 0 });
         dxRef.current = 0;
         dyRef.current = 0;
+        if (callback) callback(0, 0);
     };
 
     const createJoystickHandlers = (
@@ -130,7 +132,8 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         setDragging: React.Dispatch<React.SetStateAction<boolean>>,
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
         dxRef: React.MutableRefObject<number>,
-        dyRef: React.MutableRefObject<number>
+        dyRef: React.MutableRefObject<number>,
+        callback?: (dx: number, dy: number) => void
     ) => ({
         down: (e: React.PointerEvent) => {
             e.preventDefault();
@@ -151,17 +154,34 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         up: (e: React.PointerEvent) => {
             if (pointerIdRef.current !== e.pointerId) return;
             e.preventDefault();
-            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref);
+            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref, callback);
         },
         cancel: (e: React.PointerEvent) => {
             if (pointerIdRef.current !== e.pointerId) return;
             e.preventDefault();
-            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref);
+            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref, callback);
         },
     });
 
-    const leftHandlers = createJoystickHandlers(leftJoystickRef, leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef);
-    const rightHandlers = createJoystickHandlers(rightJoystickRef, rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef);
+    const leftHandlers = createJoystickHandlers(
+        leftJoystickRef,
+        leftPointerIdRef,
+        setDraggingLeft,
+        setLeftPos,
+        leftDxRef,
+        leftDyRef,
+        onLeftJoystickMove
+    );
+
+    const rightHandlers = createJoystickHandlers(
+        rightJoystickRef,
+        rightPointerIdRef,
+        setDraggingRight,
+        setRightPos,
+        rightDxRef,
+        rightDyRef,
+        onRightJoystickMove
+    );
 
     const createButtonHandler = (setActive: React.Dispatch<React.SetStateAction<boolean>>, callback?: (active: boolean) => void) => ({
         down: (e: React.PointerEvent) => {
