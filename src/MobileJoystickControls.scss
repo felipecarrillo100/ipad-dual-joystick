@@ -1,0 +1,133 @@
+.mobile-joystick-controls {
+
+  position: absolute;
+  pointer-events: none;
+
+  --joystick-z-index: 999;
+  --base-joystick-size: 120px;
+  --base-joystick-handle-size: 50px;
+  --base-button-size: 60px;
+  --base-button-gap: 4px;
+  --base-joystick-offset: 30px;
+  z-index: var(--joystick-z-index);
+
+  --joystickBg: rgba(0, 0, 0, 0.6);
+  --joystickHandleBg: rgba(200, 200, 200, 0.8);
+  --buttonBg: rgba(0, 0, 0, 0.3);
+  --buttonBgActive: rgba(96, 77, 77, 0.6);
+  --buttonColor: white;
+  --buttonFontSize: 24px;
+
+  --joystick-offset: calc(var(--base-joystick-offset) * var(--scale-factor));
+  --joystick-size: calc(var(--base-joystick-size) * var(--scale-factor));
+  --joystick-handle-size: calc(var(--base-joystick-handle-size) * var(--scale-factor));
+  --button-size: calc(var(--base-button-size) * var(--scale-factor));
+  --button-gap: calc(var(--base-button-gap) * var(--scale-factor));
+
+  --base-left-buttons-tilt: 0;
+  --base-left-buttons-dx: 80px;
+  --base-left-buttons-dy: 80px;
+
+  --base-right-buttons-tilt: 0;
+  --base-right-buttons-dx: 80px;
+  --base-right-buttons-dy: 80px;
+
+
+  --left-buttons-dx:  calc(var(--base-left-buttons-dx) * var(--scale-factor));
+  --left-buttons-dy:  calc(var(--base-left-buttons-dy) * var(--scale-factor));
+  --right-buttons-dx: calc(var(--base-right-buttons-dx) * var(--scale-factor));
+  --right-buttons-dy: calc(var(--base-right-buttons-dy) * var(--scale-factor));
+
+
+  .relative-container {
+    position: relative;
+
+    .joystick {
+      pointer-events: auto;
+      position: fixed;
+      width: var(--joystick-size);
+      height: var(--joystick-size);
+      border-radius: 50%;
+      background-color: var(--joystickBg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      user-select: none;
+
+      &-handle {
+        width: var(--joystick-handle-size);
+        height: var(--joystick-handle-size);
+        border-radius: 50%;
+        background-color: var(--joystickHandleBg);
+        transition: transform 0.2s ease;
+        touch-action: none;
+        user-select: none;
+
+        &.active {
+          transition: none;
+        }
+      }
+    }
+
+    .left-joystick {
+      bottom: var(--joystick-offset);
+      left: var(--joystick-offset);
+    }
+
+    .right-joystick {
+      bottom: var(--joystick-offset);
+      right: var(--joystick-offset);
+    }
+
+    .button-bar {
+      position: fixed;
+      pointer-events: auto;
+      display: flex;
+
+      .button-pair {
+        display: flex;
+        gap: var(--button-gap);
+        transform-origin: center;
+
+        .action-button {
+          width: var(--button-size);
+          height: var(--button-size);
+          border-radius: 50%;
+          background-color: var(--buttonBg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: calc(var(--buttonFontSize) * var(--scale-factor));
+          color: var(--buttonColor);
+          user-select: none;
+          touch-action: none;
+
+          &.active {
+            background-color: var(--buttonBgActive);
+          }
+        }
+      }
+    }
+
+    .up-down-buttons {
+      bottom: calc(var(--joystick-offset) + var(--joystick-size) / 2);
+      left: calc(var(--joystick-offset) + var(--joystick-size) / 2);
+      transform: translate(-50%, 50%) rotate(var(--base-left-buttons-tilt));
+
+      .action-button {
+        transform: translate(var(--left-buttons-dx), calc(0px - var(--left-buttons-dy))) rotate(calc(0deg - var(--base-left-buttons-tilt)));
+      }
+    }
+
+    .a-b-buttons {
+      bottom: calc(var(--joystick-offset) + var(--joystick-size) / 2);
+      right: calc(var(--joystick-offset) + var(--joystick-size) / 2);
+      transform: translate(50%, 50%) rotate(var(--base-right-buttons-tilt));
+      .action-button {
+        transform: translate(var(--right-buttons-dx), calc(0px - var(--right-buttons-dy))) rotate( calc(0deg - var(--base-right-buttons-tilt) ) );
+      }
+    }
+  }
+}

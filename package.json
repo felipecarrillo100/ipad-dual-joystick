@@ -1,0 +1,27 @@
+{
+  "name": "ipad-dual-joystick",
+  "description": "A React package that implements a dual joystick for ipads.",
+  "version": "0.0.5",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.16",
+    "typescript": "^5.6.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "repository": {
+    "url": "https://github.com/felipecarrillo100/ipad-dual-joystick"
+  }
+}
