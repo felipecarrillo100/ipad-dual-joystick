@@ -101,6 +101,19 @@ Variables you can customize:
 - Responsive layout for portrait and landscape modes
 - Fully customizable via SCSS or CSS
 
+## Props
+Optional callbacks: if you don’t provide a callback, the corresponding joystick or button will not render.
+
+| Prop                  | Type                               | Optional | Description                              |
+| --------------------- | ---------------------------------- |----------| ---------------------------------------- |
+| `onLeftJoystickMove`  | `(dx: number, dy: number) => void` | Yes      | Callback for left joystick movement      |
+| `onRightJoystickMove` | `(dx: number, dy: number) => void` | Yes      | Callback for right joystick movement     |
+| `onUp`                | `(active: boolean) => void`        | Yes      | Callback for "Up" button press/release   |
+| `onDown`              | `(active: boolean) => void`        | Yes      | Callback for "Down" button press/release |
+| `onButtonA`           | `(active: boolean) => void`        | Yes      | Callback for "A" button press/release    |
+| `onButtonB`           | `(active: boolean) => void`        | Yes      | Callback for "B" button press/release    |
+
+
 ## License
 
 MIT
