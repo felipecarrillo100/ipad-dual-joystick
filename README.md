@@ -1,6 +1,36 @@
-# iPad Dual Joystick Controls
+# ipad-dual-joystick
 
-A mobile joystick component for React that supports dual joysticks and action buttons, designed for iPad and touchscreen devices. Fully customizable via a theme.
+A responsive, touch-friendly React joystick and button control module for mobile devices (iPhone, iPad, Android), designed for game or interactive app input.
+
+---
+
+## Features & Benefits
+
+- **Dual joysticks**: Left and right joysticks for movement and camera control.
+- **Customizable buttons**: Up/Down and A/B buttons placed relative to joysticks.
+- **Responsive design**: Works across iPhones, iPads, portrait & landscape.
+- **Touch-friendly**: Large, easy-to-use controls with smooth pointer handling.
+- **Customizable colors & sizes**: Easily adjust colors for joystick base, thumb, and buttons via SCSS variables.
+- **Normalized output**: Joystick outputs `dx` and `dy` values between -1 and 1.
+- **Zeroing**: Values return to 0 when joystick released.
+- **Minimal dependencies**: Pure React + SCSS, no UI libraries needed.
+- **Safe CSS scoping**: SCSS module ensures no style pollution in larger projects.
+
+---
+
+## Installation
+
+Copy the files into your project:
+
+- `MobileJoystickControls.tsx`
+- `MobileJoystickControls.scss`
+
+Make sure your project supports SCSS modules or standard SCSS compilation.
+
+```bash
+# Example using npm / yarn
+npm install ipad-dual-joystick
+# or just import the files locally
 
 ## Features
 
