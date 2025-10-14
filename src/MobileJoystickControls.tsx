@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./MobileJoystickControls.scss";
-import { JoystickTheme, defaultJoystickTheme } from "./theme";
 
 interface MobileJoystickControlsProps {
     onLeftJoystickMove: (dx: number, dy: number) => void;
@@ -9,16 +8,10 @@ interface MobileJoystickControlsProps {
     onDown: (active: boolean) => void;
     onButtonA?: (active: boolean) => void;
     onButtonB?: (active: boolean) => void;
-    dual?: boolean;
-    theme?: Partial<JoystickTheme>;
 }
 
 const maxRadius = 50;
 const deadZone = 0.1;
-
-const setCssVariable = (value: number | undefined, unit: string) => {
-    return value !== undefined ? `${value}${unit}` : undefined;
-};
 
 export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onLeftJoystickMove,
@@ -27,16 +20,13 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onDown,
                                                                                   onButtonA,
                                                                                   onButtonB,
-                                                                                  dual = true,
-                                                                                  theme = {},
                                                                               }) => {
-    const mergedTheme: JoystickTheme = { ...defaultJoystickTheme, ...theme };
-
     // State
     const [draggingLeft, setDraggingLeft] = useState(false);
     const [leftPos, setLeftPos] = useState({ x: 0, y: 0 });
     const [draggingRight, setDraggingRight] = useState(false);
     const [rightPos, setRightPos] = useState({ x: 0, y: 0 });
+
     const [isUpActive, setIsUpActive] = useState(false);
     const [isDownActive, setIsDownActive] = useState(false);
     const [isAActive, setIsAActive] = useState(false);
@@ -55,8 +45,9 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
 
     const animationRef = useRef<number | null>(null);
 
-    // Responsive scaling
     const [scaleFactor, setScaleFactor] = useState(1);
+
+    // Responsive scaling
     useEffect(() => {
         const computeScale = () => {
             const factor = Math.min(window.innerWidth, window.innerHeight) / 768;
@@ -72,11 +63,11 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         const loop = () => {
             const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
             const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
-            if (leftDx !== 0 || leftDy !== 0) onLeftJoystickMove(leftDx, leftDy);
+            onLeftJoystickMove(leftDx, leftDy);
 
             const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
             const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
-            if (rightDx !== 0 || rightDy !== 0) onRightJoystickMove(rightDx, rightDy);
+            onRightJoystickMove(rightDx, rightDy);
 
             animationRef.current = requestAnimationFrame(loop);
         };
@@ -86,11 +77,12 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         };
     }, [onLeftJoystickMove, onRightJoystickMove]);
 
+    // Helper to compute normalized joystick values
     const computeJoystickFromPointer = (
         clientX: number,
         clientY: number,
         el: HTMLDivElement,
-        setPos: (p: { x: number; y: number }) => void,
+        setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
         dxRef: React.MutableRefObject<number>,
         dyRef: React.MutableRefObject<number>
     ) => {
@@ -126,64 +118,65 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         if (callback) callback(0, 0);
     };
 
-    const createJoystickHandlers = (
-        ref: React.RefObject<HTMLDivElement | null>,
-        pointerIdRef: React.MutableRefObject<number | null>,
-        setDragging: React.Dispatch<React.SetStateAction<boolean>>,
-        setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-        dxRef: React.MutableRefObject<number>,
-        dyRef: React.MutableRefObject<number>,
-        callback?: (dx: number, dy: number) => void
-    ) => ({
+    // Left Joystick Handlers
+    const leftHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
-            const el = ref.current;
+            const el = leftJoystickRef.current;
             if (!el) return;
-            pointerIdRef.current = e.pointerId;
+            leftPointerIdRef.current = e.pointerId;
             el.setPointerCapture?.(e.pointerId);
-            setDragging(true);
-            computeJoystickFromPointer(e.clientX, e.clientY, el, setPos, dxRef, dyRef);
+            setDraggingLeft(true);
+            computeJoystickFromPointer(e.clientX, e.clientY, el, setLeftPos, leftDxRef, leftDyRef);
         },
         move: (e: React.PointerEvent) => {
-            if (pointerIdRef.current !== e.pointerId) return;
-            e.preventDefault();
-            const el = ref.current;
+            if (leftPointerIdRef.current !== e.pointerId) return;
+            const el = leftJoystickRef.current;
             if (!el) return;
-            computeJoystickFromPointer(e.clientX, e.clientY, el, setPos, dxRef, dyRef);
+            computeJoystickFromPointer(e.clientX, e.clientY, el, setLeftPos, leftDxRef, leftDyRef);
         },
         up: (e: React.PointerEvent) => {
-            if (pointerIdRef.current !== e.pointerId) return;
-            e.preventDefault();
-            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref, callback);
+            if (leftPointerIdRef.current !== e.pointerId) return;
+            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove);
         },
         cancel: (e: React.PointerEvent) => {
-            if (pointerIdRef.current !== e.pointerId) return;
-            e.preventDefault();
-            finishPointer(pointerIdRef, setDragging, setPos, dxRef, dyRef, ref, callback);
+            if (leftPointerIdRef.current !== e.pointerId) return;
+            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove);
         },
-    });
+    };
 
-    const leftHandlers = createJoystickHandlers(
-        leftJoystickRef,
-        leftPointerIdRef,
-        setDraggingLeft,
-        setLeftPos,
-        leftDxRef,
-        leftDyRef,
-        onLeftJoystickMove
-    );
+    // Right Joystick Handlers
+    const rightHandlers = {
+        down: (e: React.PointerEvent) => {
+            e.preventDefault();
+            const el = rightJoystickRef.current;
+            if (!el) return;
+            rightPointerIdRef.current = e.pointerId;
+            el.setPointerCapture?.(e.pointerId);
+            setDraggingRight(true);
+            computeJoystickFromPointer(e.clientX, e.clientY, el, setRightPos, rightDxRef, rightDyRef);
+        },
+        move: (e: React.PointerEvent) => {
+            if (rightPointerIdRef.current !== e.pointerId) return;
+            const el = rightJoystickRef.current;
+            if (!el) return;
+            computeJoystickFromPointer(e.clientX, e.clientY, el, setRightPos, rightDxRef, rightDyRef);
+        },
+        up: (e: React.PointerEvent) => {
+            if (rightPointerIdRef.current !== e.pointerId) return;
+            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove);
+        },
+        cancel: (e: React.PointerEvent) => {
+            if (rightPointerIdRef.current !== e.pointerId) return;
+            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove);
+        },
+    };
 
-    const rightHandlers = createJoystickHandlers(
-        rightJoystickRef,
-        rightPointerIdRef,
-        setDraggingRight,
-        setRightPos,
-        rightDxRef,
-        rightDyRef,
-        onRightJoystickMove
-    );
-
-    const createButtonHandler = (setActive: React.Dispatch<React.SetStateAction<boolean>>, callback?: (active: boolean) => void) => ({
+    // Button handlers
+    const createButtonHandlers = (
+        setActive: React.Dispatch<React.SetStateAction<boolean>>,
+        callback?: (active: boolean) => void
+    ) => ({
         down: (e: React.PointerEvent) => {
             e.preventDefault();
             setActive(true);
@@ -196,148 +189,81 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         },
     });
 
-    const upHandler = createButtonHandler(setIsUpActive, onUp);
-    const downHandler = createButtonHandler(setIsDownActive, onDown);
-    const aHandler = createButtonHandler(setIsAActive, onButtonA);
-    const bHandler = createButtonHandler(setIsBActive, onButtonB);
+    const upHandlers = createButtonHandlers(setIsUpActive, onUp);
+    const downHandlers = createButtonHandlers(setIsDownActive, onDown);
+    const aHandlers = createButtonHandlers(setIsAActive, onButtonA);
+    const bHandlers = createButtonHandlers(setIsBActive, onButtonB);
 
     return (
-        <div className="mobile-joystick-controls" style={{
-            "--scale-factor": scaleFactor,
-            "--joystick-z-index": mergedTheme.joystickZIndex,
-            "--base-joystick-offset": setCssVariable(mergedTheme.joystickOffset, `px`),
-            "--joystick-size": setCssVariable(mergedTheme.joystickSize, `px`),
-            "--base-joystick-handle-size": setCssVariable(mergedTheme.joystickHandleSize, `px`),
-            "--base-button-gap": setCssVariable(mergedTheme.buttonGap, `px`),
-            "--base-button-size": setCssVariable(mergedTheme.buttonSize, `px`),
-            "--joystickBg": mergedTheme.joystickBg,
-            "--joystickHandleBg": mergedTheme.joystickHandleBg,
-            "--buttonBg": mergedTheme.buttonBg,
-            "--buttonBgActive": mergedTheme.buttonBgActive,
-            "--buttonColor": mergedTheme.buttonColor,
-            "--buttonFontSize": mergedTheme.buttonFontSize,
-
-            "--base-left-buttons-tilt": setCssVariable(mergedTheme.leftButtons?.tilt, "deg"),
-            "--base-left-buttons-dx": setCssVariable(mergedTheme.leftButtons?.dx, `px`),
-            "--base-left-buttons-dy": setCssVariable(mergedTheme.leftButtons?.dy, `px`),
-
-            "--base-right-buttons-tilt": setCssVariable(mergedTheme.rightButtons?.tilt, `deg`),
-            "--base-right-buttons-dx": setCssVariable(mergedTheme.rightButtons?.dx , `px`),
-            "--base-right-buttons-dy": setCssVariable(mergedTheme.rightButtons?.dy, `px`),
-        } as React.CSSProperties}>
-            <div className="relative-container">
-                {/* Left up/down buttons */}
-                <div className="button-bar up-down-buttons" >
-                    <div className="button-pair">
-                        {mergedTheme.buttonsUpDownOrder === "up/down" ? (
-                            <>
-                                <div
-                                    className={`action-button up${isUpActive ? " active" : ""}`}
-                                    onPointerDown={upHandler.down}
-                                    onPointerUp={upHandler.up}
-                                >
-                                    ↑
-                                </div>
-                                <div
-                                    className={`action-button down${isDownActive ? " active" : ""}`}
-                                    onPointerDown={downHandler.down}
-                                    onPointerUp={downHandler.up}
-                                >
-                                    ↓
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div
-                                    className={`action-button down${isDownActive ? " active" : ""}`}
-                                    onPointerDown={downHandler.down}
-                                    onPointerUp={downHandler.up}
-                                >
-                                    ↓
-                                </div>
-                                <div
-                                    className={`action-button up${isUpActive ? " active" : ""}`}
-                                    onPointerDown={upHandler.down}
-                                    onPointerUp={upHandler.up}
-                                >
-                                    ↑
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Left joystick */}
+        <div className="mobile-joystick-controls">
+            {/* Left Joystick */}
+            <div
+                ref={leftJoystickRef}
+                className="joystick left-joystick"
+                onPointerDown={leftHandlers.down}
+                onPointerMove={leftHandlers.move}
+                onPointerUp={leftHandlers.up}
+                onPointerCancel={leftHandlers.cancel}
+            >
                 <div
-                    ref={leftJoystickRef}
-                    className="joystick left-joystick"
-                    onPointerDown={leftHandlers.down}
-                    onPointerMove={leftHandlers.move}
-                    onPointerUp={leftHandlers.up}
-                    onPointerCancel={leftHandlers.cancel}
+                    className={`joystick-handle ${draggingLeft ? "active" : ""}`}
+                    style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px) scale(${draggingLeft ? 1.2 : 1})` }}
+                />
+            </div>
+
+            {/* Left Up/Down Buttons */}
+            <div className="button-bar left-buttons">
+                <div
+                    className={`action-button up ${isUpActive ? "active" : ""}`}
+                    onPointerDown={upHandlers.down}
+                    onPointerUp={upHandlers.up}
+                    onPointerCancel={upHandlers.up}
                 >
-                    <div
-                        className={`joystick-handle${draggingLeft ? " active" : ""}`}
-                        style={{transform: `translate(${leftPos.x}px, ${leftPos.y}px) scale(${draggingLeft ? 1.2 : 1})`}}
-                    />
+                    ↑
                 </div>
-
-                {/* Left A/B buttons */}
-                <div className="button-bar a-b-buttons">
-                    <div className="button-pair" >
-                        {mergedTheme.buttonsABOrder === "A/B" ? (
-                            <>
-                                <div
-                                    className={`action-button a${isAActive ? " active" : ""}`}
-                                    onPointerDown={aHandler.down}
-                                    onPointerUp={aHandler.up}
-                                >
-                                    A
-                                </div>
-                                <div
-                                    className={`action-button b${isBActive ? " active" : ""}`}
-                                    onPointerDown={bHandler.down}
-                                    onPointerUp={bHandler.up}
-                                >
-                                    B
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div
-                                    className={`action-button b${isBActive ? " active" : ""}`}
-                                    onPointerDown={bHandler.down}
-                                    onPointerUp={bHandler.up}
-                                >
-                                    B
-                                </div>
-                                <div
-                                    className={`action-button a${isAActive ? " active" : ""}`}
-                                    onPointerDown={aHandler.down}
-                                    onPointerUp={aHandler.up}
-                                >
-                                    A
-                                </div>
-                            </>
-                        )}
-                    </div>
+                <div
+                    className={`action-button down ${isDownActive ? "active" : ""}`}
+                    onPointerDown={downHandlers.down}
+                    onPointerUp={downHandlers.up}
+                    onPointerCancel={downHandlers.up}
+                >
+                    ↓
                 </div>
+            </div>
 
-                {/* Right joystick */}
-                {dual && (
-                    <div
-                        ref={rightJoystickRef}
-                        className="joystick right-joystick"
-                        onPointerDown={rightHandlers.down}
-                        onPointerMove={rightHandlers.move}
-                        onPointerUp={rightHandlers.up}
-                        onPointerCancel={rightHandlers.cancel}
-                    >
-                        <div
-                            className={`joystick-handle${draggingRight ? " active" : ""}`}
-                            style={{transform: `translate(${rightPos.x}px, ${rightPos.y}px) scale(${draggingRight ? 1.2 : 1})` }}/>
-                    </div>
-                )}
+            {/* Right Joystick */}
+            <div
+                ref={rightJoystickRef}
+                className="joystick right-joystick"
+                onPointerDown={rightHandlers.down}
+                onPointerMove={rightHandlers.move}
+                onPointerUp={rightHandlers.up}
+                onPointerCancel={rightHandlers.cancel}
+            >
+                <div
+                    className={`joystick-handle ${draggingRight ? "active" : ""}`}
+                    style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px) scale(${draggingRight ? 1.2 : 1})` }}
+                />
+            </div>
+
+            {/* Right A/B Buttons */}
+            <div className="button-bar right-buttons">
+                <div
+                    className={`action-button a ${isAActive ? "active" : ""}`}
+                    onPointerDown={aHandlers.down}
+                    onPointerUp={aHandlers.up}
+                    onPointerCancel={aHandlers.up}
+                >
+                    A
+                </div>
+                <div
+                    className={`action-button b ${isBActive ? "active" : ""}`}
+                    onPointerDown={bHandlers.down}
+                    onPointerUp={bHandlers.up}
+                    onPointerCancel={bHandlers.up}
+                >
+                    B
+                </div>
             </div>
         </div>
     );
