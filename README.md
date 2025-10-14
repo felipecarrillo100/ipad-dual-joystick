@@ -1,60 +1,38 @@
 # ipad-dual-joystick
 
-A responsive, touch-friendly React joystick and button control module for mobile devices (iPhone, iPad, Android), designed for game or interactive app input.
+## Description
+
+**`ipad-dual-joystick`** is a sleek, **mobile-optimized React component** that brings **dual on-screen joysticks** and optional buttons (`A` and `B`) to your web games and interactive apps.  
+Designed for iPhones, iPads, and modern Android devices, it gives you the precision and responsiveness of a game controller, directly in the browser.
+
+Perfect for games, simulations, and interactive experiences that require fluid, touch-friendly controls.
+
+### Benefits
+
+- **Responsive Design**: Works flawlessly on different screen sizes, orientations, and aspect ratios.
+- **Customizable**: Easily tweak colors, sizes, positions, and offsets through SCSS variables.
+- **Lightweight & Dependency-Free**: No frameworks, no bloated libraries, just clean React code.
+- **Multiplatform**: Optimized for iOS and Android touch devices.
+- **Intuitive & Smooth**: Pointer events, dead-zone handling, and dynamic joystick scaling ensure precise input.
+- **Future-Proof**: Ready for games and apps that require rapid prototyping or full-scale production.
 
 ---
-
-## Features & Benefits
-
-- **Dual joysticks**: Left and right joysticks for movement and camera control.
-- **Customizable buttons**: Up/Down and A/B buttons placed relative to joysticks.
-- **Responsive design**: Works across iPhones, iPads, portrait & landscape.
-- **Touch-friendly**: Large, easy-to-use controls with smooth pointer handling.
-- **Customizable colors & sizes**: Easily adjust colors for joystick base, thumb, and buttons via SCSS variables.
-- **Normalized output**: Joystick outputs `dx` and `dy` values between -1 and 1.
-- **Zeroing**: Values return to 0 when joystick released.
-- **Minimal dependencies**: Pure React + SCSS, no UI libraries needed.
-- **Safe CSS scoping**: SCSS module ensures no style pollution in larger projects.
-
----
-
 ## Installation
 
-Copy the files into your project:
-
-- `MobileJoystickControls.tsx`
-- `MobileJoystickControls.scss`
-
-Make sure your project supports SCSS modules or standard SCSS compilation.
-
-```bash
-# Example using npm / yarn
-npm install ipad-dual-joystick
-# or just import the files locally
-
-## Features
-
-- Dual joysticks (left and right) with independent callbacks
-- Up/Down directional buttons
-- A/B action buttons
-- Fully customizable sizes, colors, spacing, and button offsets
-- Supports scaling for different screen sizes
-- Smooth touch handling with dead zone support
-
-## Installation
+Install via npm:
 
 ```bash
 npm install ipad-dual-joystick
-# or
-yarn add ipad-dual-joystick
 ```
 
 ## Usage
 
 ```tsx
 import React from "react";
+// Import Javascript Module
 import { MobileJoystickControls } from "ipad-dual-joystick";
-import { JoystickTheme } from "ipad-dual-joystick/theme";
+// Import SCSS/CSS styling
+import "ipad-dual-joystick/dist/MobileJoystickControls.scss";
 
 const MyGame: React.FC = () => {
   const handleLeftMove = (dx: number, dy: number) => {
@@ -64,12 +42,7 @@ const MyGame: React.FC = () => {
   const handleRightMove = (dx: number, dy: number) => {
     console.log("Right joystick:", dx, dy);
   };
-
-  const theme: Partial<JoystickTheme> = {
-    joystickSize: 140,
-    leftButtons: { dx: 0, dy: 90, tilt: 45 },
-    rightButtons: { dx: 0, dy: 90, tilt: -45 },
-  };
+  
 
   return (
     <MobileJoystickControls
@@ -79,73 +52,50 @@ const MyGame: React.FC = () => {
       onDown={(active) => console.log("Down:", active)}
       onButtonA={(active) => console.log("A:", active)}
       onButtonB={(active) => console.log("B:", active)}
-      theme={theme}
     />
   );
 };
 ```
+## Styling
 
-## Props
+You can fully customize the appearance of joysticks and buttons using SCSS:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `onLeftJoystickMove` | `(dx: number, dy: number) => void` | Callback for left joystick movement. dx/dy are normalized (-1 to 1) |
-| `onRightJoystickMove` | `(dx: number, dy: number) => void` | Callback for right joystick movement |
-| `onUp` | `(active: boolean) => void` | Callback when up button pressed/released |
-| `onDown` | `(active: boolean) => void` | Callback when down button pressed/released |
-| `onButtonA` | `(active: boolean) => void` | Callback for A button |
-| `onButtonB` | `(active: boolean) => void` | Callback for B button |
-| `dual` | `boolean` | Whether to show the right joystick (default `true`) |
-| `theme` | `Partial<JoystickTheme>` | Optional theme overrides |
+```scss
+$joystick-bg: rgba(50, 50, 50, 0.5);
+$joystick-handle-bg: #ff0000;
+$joystick-handle-active-bg: #00ff00;
+$button-bg: #333333;
+$button-active-bg: #ff8800;
 
-## Theme
+@import "ipad-dual-joystick/dist/MobileJoystickControls.scss";
 
-`JoystickTheme` allows you to customize appearance and layout:
-
-```ts
-interface JoystickTheme {
-    joystickSize?: number;
-    joystickHandleSize?: number;
-    joystickZIndex?: number;
-    joystickOffset?: number;
-    joystickHandleBg?: string;
-    joystickBg?: string;
-
-    buttonSize?: number;
-    buttonGap?: number;
-    buttonBg?: string;
-    buttonBgActive?: string;
-    buttonFontSize?: string;
-    buttonColor?: string;
-
-    buttonsUpDownOrder: "up/down" | "down/up";
-    buttonsABOrder: "A/B" | "B/A";
-    leftButtons: { dx: number, dy: number, tilt: number };
-    rightButtons: { dx: number, dy: number, tilt: number };
-}
 ```
 
-### CSS Variables
+Variables you can customize:
 
-The component uses CSS variables internally for scaling and positioning:
+- $joystick-bg
+- $joystick-handle-bg
+- $joystick-handle-active-bg
+- $button-bg
+- $button-active-bg
+- $button-color
+- $button-active-color
+- $joystick-size
+- $joystick-handle-size
+- $button-size
+- $button-gap
+- $joystick-offset-vertical
+- $joystick-offset-horizontal
+- $button-offset-vertical
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `--scale-factor` | `1` | Device scaling factor |
-| `--joystick-z-index` | `1000` | Joystick z-index |
-| `--joystick-size` | `130px` | Size of joystick base |
-| `--joystick-handle-size` | `50px` | Size of joystick handle |
-| `--joystick-offset` | `30px` | Distance from screen edges |
-| `--button-size` | `60px` | Size of A/B and up/down buttons |
-| `--button-gap` | `50px` | Gap between paired buttons |
-| `--buttonFontSize` | `24px` | Font size for button labels |
-| `--buttonColor` | `white` | Color of button text |
-| `--buttonBg` | `rgba(0,0,0,0.3)` | Button background |
-| `--buttonBgActive` | `rgba(96,77,77,0.6)` | Active button background |
-| `--joystickBg` | `rgba(0,0,0,0.6)` | Joystick base background |
-| `--joystickHandleBg` | `rgba(200,200,200,0.8)` | Joystick handle background |
-| `--base-left-buttons-tilt` | `45deg` | Tilt of left buttons |
-| `--base-left-buttons-dx` | `0px` | Horizontal offset of left buttons |
-| `--base-left-buttons-dy` | `85px` | Vertical offset of left buttons |
-| `--base-right-buttons-tilt` | `-45deg` | Tilt of right buttons |
-| `--base-right-buttons-dx` | `0px` | Horizontal offset
+## Features
+
+- Dual joysticks with smooth analog input
+- Optional action buttons (A and B)
+- Dead-zone and scaling for precise control
+- Responsive layout for portrait and landscape modes
+- Fully customizable via SCSS or CSS
+
+## License
+
+MIT
