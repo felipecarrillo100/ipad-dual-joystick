@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 
 interface MobileJoystickControlsProps {
-    onLeftJoystickMove: (dx: number, dy: number) => void;
-    onRightJoystickMove: (dx: number, dy: number) => void;
-    onUp: (active: boolean) => void;
-    onDown: (active: boolean) => void;
+    onLeftJoystickMove?: (dx: number, dy: number) => void;
+    onRightJoystickMove?: (dx: number, dy: number) => void;
+    onUp?: (active: boolean) => void;
+    onDown?: (active: boolean) => void;
     onButtonA?: (active: boolean) => void;
     onButtonB?: (active: boolean) => void;
 }
@@ -62,11 +62,11 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         const loop = () => {
             const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
             const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
-            onLeftJoystickMove(leftDx, leftDy);
+            if (ShowJoystickLeft) onLeftJoystickMove(leftDx, leftDy);
 
             const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
             const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
-            onRightJoystickMove(rightDx, rightDy);
+            if (ShowJoystickRight) onRightJoystickMove(rightDx, rightDy);
 
             animationRef.current = requestAnimationFrame(loop);
         };
@@ -82,8 +82,8 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         clientY: number,
         el: HTMLDivElement,
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-        dxRef: React.MutableRefObject<number>,
-        dyRef: React.MutableRefObject<number>
+        dxRef: ReturnType<typeof useRef>,
+        dyRef: ReturnType<typeof useRef>
     ) => {
         const rect = el.getBoundingClientRect();
         const dx = clientX - (rect.left + rect.width / 2);
@@ -99,11 +99,11 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     };
 
     const finishPointer = (
-        pointerIdRef: React.MutableRefObject<number | null>,
+        pointerIdRef: React.RefObject<number | null>,
         setDragging: React.Dispatch<React.SetStateAction<boolean>>,
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-        dxRef: React.MutableRefObject<number>,
-        dyRef: React.MutableRefObject<number>,
+        dxRef: ReturnType<typeof useRef>,
+        dyRef: ReturnType<typeof useRef>,
         elRef: React.RefObject<HTMLDivElement | null>,
         callback?: (dx: number, dy: number) => void
     ) => {
@@ -193,10 +193,18 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const aHandlers = createButtonHandlers(setIsAActive, onButtonA);
     const bHandlers = createButtonHandlers(setIsBActive, onButtonB);
 
+    const ShowButtonA = typeof onButtonA === "function";
+    const ShowButtonB = typeof onButtonB === "function";
+    const ShowButtonUp = typeof onUp === "function";
+    const ShowButtonDown = typeof onDown === "function";
+
+    const ShowJoystickLeft = typeof onLeftJoystickMove === "function";
+    const ShowJoystickRight = typeof onRightJoystickMove === "function";
+
     return (
         <div className="mobile-joystick-controls">
             {/* Left Joystick */}
-            <div
+            {ShowJoystickLeft && <div
                 ref={leftJoystickRef}
                 className="joystick left-joystick"
                 onPointerDown={leftHandlers.down}
@@ -208,30 +216,30 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     className={`joystick-handle ${draggingLeft ? "active" : ""}`}
                     style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px) scale(${draggingLeft ? 1.2 : 1})` }}
                 />
-            </div>
+            </div>}
 
             {/* Left Up/Down Buttons */}
             <div className="button-bar left-buttons">
-                <div
+                {ShowButtonUp && <div
                     className={`action-button up ${isUpActive ? "active" : ""}`}
                     onPointerDown={upHandlers.down}
                     onPointerUp={upHandlers.up}
                     onPointerCancel={upHandlers.up}
                 >
                     ↑
-                </div>
-                <div
+                </div> }
+                { ShowButtonDown && <div
                     className={`action-button down ${isDownActive ? "active" : ""}`}
                     onPointerDown={downHandlers.down}
                     onPointerUp={downHandlers.up}
                     onPointerCancel={downHandlers.up}
                 >
                     ↓
-                </div>
+                </div> }
             </div>
 
             {/* Right Joystick */}
-            <div
+            {ShowJoystickRight && <div
                 ref={rightJoystickRef}
                 className="joystick right-joystick"
                 onPointerDown={rightHandlers.down}
@@ -243,26 +251,26 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     className={`joystick-handle ${draggingRight ? "active" : ""}`}
                     style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px) scale(${draggingRight ? 1.2 : 1})` }}
                 />
-            </div>
+            </div> }
 
             {/* Right A/B Buttons */}
             <div className="button-bar right-buttons">
-                <div
+                {ShowButtonA && <div
                     className={`action-button a ${isAActive ? "active" : ""}`}
                     onPointerDown={aHandlers.down}
                     onPointerUp={aHandlers.up}
                     onPointerCancel={aHandlers.up}
                 >
                     A
-                </div>
-                <div
+                </div> }
+                { ShowButtonB && <div
                     className={`action-button b ${isBActive ? "active" : ""}`}
                     onPointerDown={bHandlers.down}
                     onPointerUp={bHandlers.up}
                     onPointerCancel={bHandlers.up}
                 >
                     B
-                </div>
+                </div> }
             </div>
         </div>
     );

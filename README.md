@@ -1,4 +1,4 @@
-# ipad-dual-joystick
+ ipad-dual-joystick
 
 ## Description
 
@@ -10,6 +10,7 @@ Perfect for games, simulations, and interactive experiences that require fluid, 
 ### Benefits
 
 - **Responsive Design**: Works flawlessly on different screen sizes, orientations, and aspect ratios.
+- **Optional controls**: Only show joysticks or buttons if the corresponding callbacks are provided.
 - **Customizable**: Easily tweak colors, sizes, positions, and offsets through SCSS variables.
 - **Lightweight & Dependency-Free**: No frameworks, no bloated libraries, just clean React code.
 - **Multiplatform**: Optimized for iOS and Android touch devices.
@@ -35,25 +36,29 @@ import { MobileJoystickControls } from "ipad-dual-joystick";
 import "ipad-dual-joystick/dist/MobileJoystickControls.scss";
 
 const MyGame: React.FC = () => {
-  const handleLeftMove = (dx: number, dy: number) => {
-    console.log("Left joystick:", dx, dy);
-  };
+    const handleLeftMove = (dx: number, dy: number) => {
+        console.log("Left joystick:", dx, dy);
+    };
 
-  const handleRightMove = (dx: number, dy: number) => {
-    console.log("Right joystick:", dx, dy);
-  };
-  
+    const handleRightMove = (dx: number, dy: number) => {
+        console.log("Right joystick:", dx, dy);
+    };
 
-  return (
-    <MobileJoystickControls
-      onLeftJoystickMove={handleLeftMove}
-      onRightJoystickMove={handleRightMove}
-      onUp={(active) => console.log("Up:", active)}
-      onDown={(active) => console.log("Down:", active)}
-      onButtonA={(active) => console.log("A:", active)}
-      onButtonB={(active) => console.log("B:", active)}
-    />
-  );
+    const handleUp = (active: boolean) => console.log("Up:", active);
+    const handleDown = (active: boolean) => console.log("Down:", active);
+    const handleA = (active: boolean) => console.log("A:", active);
+    const handleB = (active: boolean) => console.log("B:", active);
+
+    return (
+        <MobileJoystickControls
+            onLeftJoystickMove={handleLeftMove}   // optional
+            onRightJoystickMove={handleRightMove} // optional
+            onUp={handleUp}                       // optional
+            onDown={handleDown}                   // optional
+            onButtonA={handleA}                   // optional
+            onButtonB={handleB}                   // optional
+        />
+    );
 };
 ```
 ## Styling
