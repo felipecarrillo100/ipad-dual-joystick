@@ -1,0 +1,147 @@
+// MobileJoystickControls-fade.scss
+
+// ===== COLOR VARIABLES =====
+$joystick-bg: rgba(0, 0, 0, 0.3);
+$joystick-handle-bg: rgba(200, 200, 200, 0.8);
+$joystick-handle-active-bg: rgba(234, 226, 226, 0.9);
+
+$button-bg: rgba(0, 0, 0, 0.3);
+$button-active-bg: rgba(165, 147, 147, 0.6);
+$button-color: white;
+$button-active-color: black;
+
+// ===== LAYOUT VARIABLES =====
+$joystick-size: 120px;
+$joystick-handle-size: 50px;
+$button-size: 60px;
+$button-gap: 8px;
+$joystick-offset-vertical: 30px;
+$joystick-offset-horizontal: 30px;
+$button-offset-vertical: 160px;
+
+// ===== FADE SETTINGS =====
+$control-idle-opacity: 0.2;
+$control-active-opacity: 1;
+$control-transition: 0.5s ease; // fade duration
+$control-idle-delay: 3s;        // remain solid before fading
+
+// ===== STYLES =====
+.mobile-joystick-controls {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  touch-action: none;           // prevents magnifier / long press menu
+  -webkit-touch-callout: none;  // iOS context menu
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  // Initial idle state
+  opacity: $control-idle-opacity;
+  transition: opacity $control-transition $control-idle-delay;
+
+  // Instant fade in on active touch
+  &:active,
+  .joystick:active,
+  .action-button:active {
+    opacity: $control-active-opacity;
+    transition-delay: 0s; // instant
+  }
+
+  // ===== JOYSTICKS =====
+  .joystick {
+    pointer-events: auto;
+    position: fixed;
+    width: $joystick-size;
+    height: $joystick-size;
+    border-radius: 50%;
+    background-color: $joystick-bg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity $control-transition $control-idle-delay;
+
+    touch-action: none;           // prevents magnifier / long press menu
+    -webkit-touch-callout: none;  // iOS context menu
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    &.left-joystick {
+      bottom: $joystick-offset-vertical;
+      left: $joystick-offset-horizontal;
+    }
+
+    &.right-joystick {
+      bottom: $joystick-offset-vertical;
+      right: $joystick-offset-horizontal;
+    }
+
+    .joystick-handle {
+      width: $joystick-handle-size;
+      height: $joystick-handle-size;
+      border-radius: 50%;
+      background-color: $joystick-handle-bg;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+
+      touch-action: none;           // prevents magnifier / long press menu
+      -webkit-touch-callout: none;  // iOS context menu
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+
+      &.active {
+        background-color: $joystick-handle-active-bg;
+      }
+    }
+  }
+
+  // ===== BUTTONS =====
+  .button-bar {
+    pointer-events: auto;
+    display: flex;
+    gap: $button-gap;
+    z-index: 1001;
+    transition: opacity $control-transition $control-idle-delay;
+
+    &.left-buttons {
+      position: fixed;
+      bottom: $button-offset-vertical;
+      left: $joystick-offset-horizontal;
+    }
+
+    &.right-buttons {
+      position: fixed;
+      bottom: $button-offset-vertical;
+      right: $joystick-offset-horizontal;
+    }
+
+    .action-button {
+      width: $button-size;
+      height: $button-size;
+      border-radius: 50%;
+      background-color: $button-bg;
+      color: $button-color;
+      font-weight: bold;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background-color 0.1s ease, color 0.1s ease, opacity $control-transition $control-idle-delay;
+
+      touch-action: none;           // prevents magnifier / long press menu
+      -webkit-touch-callout: none;  // iOS context menu
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+
+      &.active {
+        background-color: $button-active-bg;
+        color: $button-active-color;
+        transform: scale(1.2);
+      }
+    }
+  }
+}

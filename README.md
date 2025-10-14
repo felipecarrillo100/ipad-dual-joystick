@@ -33,8 +33,9 @@ import React from "react";
 // Import Javascript Module
 import { MobileJoystickControls } from "ipad-dual-joystick";
 // Import SCSS/CSS styling
-import "ipad-dual-joystick/dist/MobileJoystickControls.scss";
-
+import "ipad-dual-joystick/dist/styles.scss";
+// Optionally, import styles-fade for the controls to hide when inactive for a few seconds
+import "ipad-dual-joystick/dist/styles-fade.scss";
 const MyGame: React.FC = () => {
     const handleLeftMove = (dx: number, dy: number) => {
         console.log("Left joystick:", dx, dy);

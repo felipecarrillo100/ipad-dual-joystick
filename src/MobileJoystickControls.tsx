@@ -211,6 +211,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                 onPointerMove={leftHandlers.move}
                 onPointerUp={leftHandlers.up}
                 onPointerCancel={leftHandlers.cancel}
+                onContextMenu={(e) => e.preventDefault()}
             >
                 <div
                     className={`joystick-handle ${draggingLeft ? "active" : ""}`}
@@ -225,6 +226,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     onPointerDown={upHandlers.down}
                     onPointerUp={upHandlers.up}
                     onPointerCancel={upHandlers.up}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     ↑
                 </div> }
@@ -233,6 +235,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     onPointerDown={downHandlers.down}
                     onPointerUp={downHandlers.up}
                     onPointerCancel={downHandlers.up}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     ↓
                 </div> }
@@ -246,6 +249,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                 onPointerMove={rightHandlers.move}
                 onPointerUp={rightHandlers.up}
                 onPointerCancel={rightHandlers.cancel}
+                onContextMenu={(e) => e.preventDefault()}
             >
                 <div
                     className={`joystick-handle ${draggingRight ? "active" : ""}`}
@@ -260,6 +264,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     onPointerDown={aHandlers.down}
                     onPointerUp={aHandlers.up}
                     onPointerCancel={aHandlers.up}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     A
                 </div> }
@@ -268,6 +273,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                     onPointerDown={bHandlers.down}
                     onPointerUp={bHandlers.up}
                     onPointerCancel={bHandlers.up}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     B
                 </div> }

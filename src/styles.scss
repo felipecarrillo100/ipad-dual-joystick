@@ -26,6 +26,10 @@ $button-offset-vertical: 160px;
   height: 100vh;
   touch-action: none;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;       // iOS
+  -webkit-touch-callout: none;     // iOS magnifier
+  -webkit-tap-highlight-color: transparent;
 
   .joystick {
     pointer-events: auto;
@@ -38,6 +42,9 @@ $button-offset-vertical: 160px;
     align-items: center;
     justify-content: center;
     user-select: none;
+    -webkit-user-select: none;       // iOS
+    -webkit-touch-callout: none;     // iOS magnifier
+    -webkit-tap-highlight-color: transparent;
     z-index: 1000;
 
     &.left-joystick {
@@ -91,6 +98,9 @@ $button-offset-vertical: 160px;
       align-items: center;
       justify-content: center;
       user-select: none;
+      -webkit-user-select: none;       // iOS
+      -webkit-touch-callout: none;     // iOS magnifier
+      -webkit-tap-highlight-color: transparent;
       touch-action: none;
       transition: background-color 0.1s ease, color 0.1s ease;
 
