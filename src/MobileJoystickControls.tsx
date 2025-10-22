@@ -9,9 +9,9 @@ interface MobileJoystickControlsProps {
     onButtonB?: (active: boolean) => void;
 }
 
-const maxRadius = 50; // Maximum distance thumb can move from center
-const deadZone = 0.1; // Minimum axis value to be considered active
-const maxOutside = 0.35; // Allow thumb to go slightly outside circle
+const maxRadius = 50;
+const deadZone = 0.1;
+const maxOutside = 0.35;
 
 export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onLeftJoystickMove,
@@ -21,7 +21,6 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onButtonA,
                                                                                   onButtonB,
                                                                               }) => {
-    // State
     const [draggingLeft, setDraggingLeft] = useState(false);
     const [leftPos, setLeftPos] = useState({ x: 0, y: 0 });
     const [draggingRight, setDraggingRight] = useState(false);
@@ -32,7 +31,10 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const [isAActive, setIsAActive] = useState(false);
     const [isBActive, setIsBActive] = useState(false);
 
-    // Refs
+    const [isActive, setIsActive] = useState(false);
+    const fadeTimeoutRef = useRef<number | null>(null);
+
+    // Refs for joysticks
     const leftJoystickRef = useRef<HTMLDivElement | null>(null);
     const leftPointerIdRef = useRef<number | null>(null);
     const leftDxRef = useRef(0);
@@ -45,7 +47,17 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
 
     const animationRef = useRef<number | null>(null);
 
-    // Continuous joystick loop
+    // Helpers to manage active opacity
+    const activateControls = () => {
+        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+        setIsActive(true);
+    };
+    const scheduleFade = () => {
+        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+        fadeTimeoutRef.current = setTimeout(() => setIsActive(false), 3000);
+    };
+
+    // Continuous joystick updates
     useEffect(() => {
         const loop = () => {
             const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
@@ -64,7 +76,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         };
     }, [onLeftJoystickMove, onRightJoystickMove]);
 
-    // Helper to compute normalized joystick values
+    // Joystick computation
     const computeJoystickFromPointer = (
         clientX: number,
         clientY: number,
@@ -88,7 +100,6 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         const normalizedX = x / (maxRadius * (1 + maxOutside));
         const normalizedY = -y / (maxRadius * (1 + maxOutside));
 
-        // Apply deadzone per axis
         dxRef.current = Math.abs(normalizedX) > deadZone ? normalizedX : 0;
         dyRef.current = Math.abs(normalizedY) > deadZone ? normalizedY : 0;
     };
@@ -110,12 +121,14 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         dxRef.current = 0;
         dyRef.current = 0;
         if (callback) callback(0, 0);
+        scheduleFade();
     };
 
-    // Left Joystick Handlers
+    // Joystick handlers
     const leftHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
+            activateControls();
             const el = leftJoystickRef.current;
             if (!el) return;
             leftPointerIdRef.current = e.pointerId;
@@ -129,20 +142,13 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             if (!el) return;
             computeJoystickFromPointer(e.clientX, e.clientY, el, setLeftPos, leftDxRef, leftDyRef);
         },
-        up: (e: React.PointerEvent) => {
-            if (leftPointerIdRef.current !== e.pointerId) return;
-            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove);
-        },
-        cancel: (e: React.PointerEvent) => {
-            if (leftPointerIdRef.current !== e.pointerId) return;
-            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove);
-        },
+        up: (_e: React.PointerEvent) => finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
+        cancel: (_e: React.PointerEvent) => finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
     };
-
-    // Right Joystick Handlers
     const rightHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
+            activateControls();
             const el = rightJoystickRef.current;
             if (!el) return;
             rightPointerIdRef.current = e.pointerId;
@@ -156,31 +162,16 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             if (!el) return;
             computeJoystickFromPointer(e.clientX, e.clientY, el, setRightPos, rightDxRef, rightDyRef);
         },
-        up: (e: React.PointerEvent) => {
-            if (rightPointerIdRef.current !== e.pointerId) return;
-            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove);
-        },
-        cancel: (e: React.PointerEvent) => {
-            if (rightPointerIdRef.current !== e.pointerId) return;
-            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove);
-        },
+        up: (_e: React.PointerEvent) => finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
+        cancel: (_e: React.PointerEvent) => finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
     };
 
-    // Button handlers
     const createButtonHandlers = (
         setActive: React.Dispatch<React.SetStateAction<boolean>>,
         callback?: (active: boolean) => void
     ) => ({
-        down: (e: React.PointerEvent) => {
-            e.preventDefault();
-            setActive(true);
-            callback?.(true);
-        },
-        up: (e: React.PointerEvent) => {
-            e.preventDefault();
-            setActive(false);
-            callback?.(false);
-        },
+        down: (e: React.PointerEvent) => { e.preventDefault(); activateControls(); setActive(true); callback?.(true); },
+        up: (e: React.PointerEvent) => { e.preventDefault(); setActive(false); callback?.(false); scheduleFade(); },
     });
 
     const upHandlers = createButtonHandlers(setIsUpActive, onUp);
@@ -192,86 +183,100 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const ShowButtonB = typeof onButtonB === "function";
     const ShowButtonUp = typeof onUp === "function";
     const ShowButtonDown = typeof onDown === "function";
-
     const ShowJoystickLeft = typeof onLeftJoystickMove === "function";
     const ShowJoystickRight = typeof onRightJoystickMove === "function";
 
     return (
-        <div className="mobile-joystick-controls">
+        <div
+            className="mobile-joystick-controls"
+            style={{ opacity: isActive ? 1 : 0.2, transition: "opacity 0.5s ease" }}
+        >
             {/* Left Joystick */}
-            {ShowJoystickLeft && <div
-                ref={leftJoystickRef}
-                className="joystick left-joystick"
-                onPointerDown={leftHandlers.down}
-                onPointerMove={leftHandlers.move}
-                onPointerUp={leftHandlers.up}
-                onPointerCancel={leftHandlers.cancel}
-                onContextMenu={(e) => e.preventDefault()}
-            >
+            {ShowJoystickLeft && (
                 <div
-                    className={`joystick-handle ${draggingLeft ? "active" : ""}`}
-                    style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px)` }}
-                />
-            </div>}
+                    ref={leftJoystickRef}
+                    className="joystick left-joystick"
+                    onPointerDown={leftHandlers.down}
+                    onPointerMove={leftHandlers.move}
+                    onPointerUp={leftHandlers.up}
+                    onPointerCancel={leftHandlers.cancel}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <div
+                        className={`joystick-handle ${draggingLeft ? "active" : ""}`}
+                        style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px)` }}
+                    />
+                </div>
+            )}
 
-            {/* Left Up/Down Buttons */}
+            {/* Left Buttons */}
             <div className="button-bar left-buttons">
-                {ShowButtonUp && <div
-                    className={`action-button up ${isUpActive ? "active" : ""}`}
-                    onPointerDown={upHandlers.down}
-                    onPointerUp={upHandlers.up}
-                    onPointerCancel={upHandlers.up}
-                    onContextMenu={(e) => e.preventDefault()}
-                >
-                    ↑
-                </div> }
-                { ShowButtonDown && <div
-                    className={`action-button down ${isDownActive ? "active" : ""}`}
-                    onPointerDown={downHandlers.down}
-                    onPointerUp={downHandlers.up}
-                    onPointerCancel={downHandlers.up}
-                    onContextMenu={(e) => e.preventDefault()}
-                >
-                    ↓
-                </div> }
+                {ShowButtonUp && (
+                    <div
+                        className={`action-button up ${isUpActive ? "active" : ""}`}
+                        onPointerDown={upHandlers.down}
+                        onPointerUp={upHandlers.up}
+                        onPointerCancel={upHandlers.up}
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
+                        ↑
+                    </div>
+                )}
+                {ShowButtonDown && (
+                    <div
+                        className={`action-button down ${isDownActive ? "active" : ""}`}
+                        onPointerDown={downHandlers.down}
+                        onPointerUp={downHandlers.up}
+                        onPointerCancel={downHandlers.up}
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
+                        ↓
+                    </div>
+                )}
             </div>
 
             {/* Right Joystick */}
-            {ShowJoystickRight && <div
-                ref={rightJoystickRef}
-                className="joystick right-joystick"
-                onPointerDown={rightHandlers.down}
-                onPointerMove={rightHandlers.move}
-                onPointerUp={rightHandlers.up}
-                onPointerCancel={rightHandlers.cancel}
-                onContextMenu={(e) => e.preventDefault()}
-            >
+            {ShowJoystickRight && (
                 <div
-                    className={`joystick-handle ${draggingRight ? "active" : ""}`}
-                    style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px)` }}
-                />
-            </div> }
+                    ref={rightJoystickRef}
+                    className="joystick right-joystick"
+                    onPointerDown={rightHandlers.down}
+                    onPointerMove={rightHandlers.move}
+                    onPointerUp={rightHandlers.up}
+                    onPointerCancel={rightHandlers.cancel}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <div
+                        className={`joystick-handle ${draggingRight ? "active" : ""}`}
+                        style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px)` }}
+                    />
+                </div>
+            )}
 
-            {/* Right A/B Buttons */}
+            {/* Right Buttons */}
             <div className="button-bar right-buttons">
-                {ShowButtonA && <div
-                    className={`action-button a ${isAActive ? "active" : ""}`}
-                    onPointerDown={aHandlers.down}
-                    onPointerUp={aHandlers.up}
-                    onPointerCancel={aHandlers.up}
-                    onContextMenu={(e) => e.preventDefault()}
-                >
-                    A
-                </div> }
-                { ShowButtonB && <div
-                    className={`action-button b ${isBActive ? "active" : ""}`}
-                    onPointerDown={bHandlers.down}
-                    onPointerUp={bHandlers.up}
-                    onPointerCancel={bHandlers.up}
-                    onContextMenu={(e) => e.preventDefault()}
-                >
-                    B
-                </div> }
+                {ShowButtonA && (
+                    <div
+                        className={`action-button a ${isAActive ? "active" : ""}`}
+                        onPointerDown={aHandlers.down}
+                        onPointerUp={aHandlers.up}
+                        onPointerCancel={aHandlers.up}
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
+                        A
+                    </div>
+                )}
+                {ShowButtonB && (
+                    <div
+                        className={`action-button b ${isBActive ? "active" : ""}`}
+                        onPointerDown={bHandlers.down}
+                        onPointerUp={bHandlers.up}
+                        onPointerCancel={bHandlers.up}
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
+                        B
+                    </div>
+                )}
             </div>
         </div>
     );

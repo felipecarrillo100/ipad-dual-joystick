@@ -22,8 +22,6 @@ $button-offset-vertical: 160px;
 // ===== FADE SETTINGS =====
 $control-idle-opacity: 0.2;
 $control-active-opacity: 1;
-$control-transition: 0.5s ease; // fade duration
-$control-idle-delay: 3s;        // remain solid before fading
 
 // ===== STYLES =====
 .mobile-joystick-controls {
@@ -31,23 +29,14 @@ $control-idle-delay: 3s;        // remain solid before fading
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  touch-action: none;           // prevents magnifier / long press menu
-  -webkit-touch-callout: none;  // iOS context menu
+  touch-action: none;
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
 
-  // Initial idle state
+  // Initial idle state (optional dynamic fade can be handled in TSX)
   opacity: $control-idle-opacity;
-  transition: opacity $control-transition $control-idle-delay;
-
-  // Instant fade in on active touch
-  &:active,
-  .joystick:active,
-  .action-button:active {
-    opacity: $control-active-opacity;
-    transition-delay: 0s; // instant
-  }
 
   // ===== JOYSTICKS =====
   .joystick {
@@ -61,10 +50,9 @@ $control-idle-delay: 3s;        // remain solid before fading
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    transition: opacity $control-transition $control-idle-delay;
 
-    touch-action: none;           // prevents magnifier / long press menu
-    -webkit-touch-callout: none;  // iOS context menu
+    touch-action: none;
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
@@ -85,11 +73,11 @@ $control-idle-delay: 3s;        // remain solid before fading
       border-radius: 50%;
       background-color: $joystick-handle-bg;
 
-      // Remove scale/transition to prevent thumb lag
+      // **No transition**, thumb follows instantly
       transition: none;
 
-      touch-action: none;           // prevents magnifier / long press menu
-      -webkit-touch-callout: none;  // iOS context menu
+      touch-action: none;
+      -webkit-touch-callout: none;
       -webkit-user-select: none;
       -ms-user-select: none;
       user-select: none;
@@ -106,7 +94,6 @@ $control-idle-delay: 3s;        // remain solid before fading
     display: flex;
     gap: $button-gap;
     z-index: 1001;
-    transition: opacity $control-transition $control-idle-delay;
 
     &.left-buttons {
       position: fixed;
@@ -131,18 +118,20 @@ $control-idle-delay: 3s;        // remain solid before fading
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background-color 0.1s ease, color 0.1s ease, opacity $control-transition $control-idle-delay;
 
-      touch-action: none;           // prevents magnifier / long press menu
-      -webkit-touch-callout: none;  // iOS context menu
+      touch-action: none;
+      -webkit-touch-callout: none;
       -webkit-user-select: none;
       -ms-user-select: none;
       user-select: none;
 
+      // Small transitions for buttons only (color, scale)
+      transition: background-color 0.1s ease, color 0.1s ease;
+
       &.active {
         background-color: $button-active-bg;
         color: $button-active-color;
-        transform: scale(1.2); // optional, buttons can scale if desired
+        transform: scale(1.2);
       }
     }
   }
