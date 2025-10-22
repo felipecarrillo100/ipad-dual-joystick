@@ -84,7 +84,9 @@ $control-idle-delay: 3s;        // remain solid before fading
       height: $joystick-handle-size;
       border-radius: 50%;
       background-color: $joystick-handle-bg;
-      transition: transform 0.2s ease, background-color 0.2s ease;
+
+      // Remove scale/transition to prevent thumb lag
+      transition: none;
 
       touch-action: none;           // prevents magnifier / long press menu
       -webkit-touch-callout: none;  // iOS context menu
@@ -129,7 +131,7 @@ $control-idle-delay: 3s;        // remain solid before fading
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease, background-color 0.1s ease, color 0.1s ease, opacity $control-transition $control-idle-delay;
+      transition: background-color 0.1s ease, color 0.1s ease, opacity $control-transition $control-idle-delay;
 
       touch-action: none;           // prevents magnifier / long press menu
       -webkit-touch-callout: none;  // iOS context menu
@@ -140,7 +142,7 @@ $control-idle-delay: 3s;        // remain solid before fading
       &.active {
         background-color: $button-active-bg;
         color: $button-active-color;
-        transform: scale(1.2);
+        transform: scale(1.2); // optional, buttons can scale if desired
       }
     }
   }

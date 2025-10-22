@@ -9,8 +9,9 @@ interface MobileJoystickControlsProps {
     onButtonB?: (active: boolean) => void;
 }
 
-const maxRadius = 50;
-const deadZone = 0.1;
+const maxRadius = 50; // Maximum distance thumb can move from center
+const deadZone = 0.1; // Minimum axis value to be considered active
+const maxOutside = 0.35; // Allow thumb to go slightly outside circle
 
 export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onLeftJoystickMove,
@@ -44,29 +45,16 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
 
     const animationRef = useRef<number | null>(null);
 
-    const [scaleFactor, setScaleFactor] = useState(1);
-
-    // Responsive scaling
-    useEffect(() => {
-        const computeScale = () => {
-            const factor = Math.min(window.innerWidth, window.innerHeight) / 768;
-            setScaleFactor(factor);
-        };
-        computeScale();
-        window.addEventListener("resize", computeScale);
-        return () => window.removeEventListener("resize", computeScale);
-    }, []);
-
     // Continuous joystick loop
     useEffect(() => {
         const loop = () => {
             const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
             const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
-            if (ShowJoystickLeft) onLeftJoystickMove(leftDx, leftDy);
+            if (ShowJoystickLeft && onLeftJoystickMove) onLeftJoystickMove(leftDx, leftDy);
 
             const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
             const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
-            if (ShowJoystickRight) onRightJoystickMove(rightDx, rightDy);
+            if (ShowJoystickRight && onRightJoystickMove) onRightJoystickMove(rightDx, rightDy);
 
             animationRef.current = requestAnimationFrame(loop);
         };
@@ -90,12 +78,19 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         const dy = clientY - (rect.top + rect.height / 2);
         const distance = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx);
-        const limitedDistance = Math.min(distance, maxRadius * scaleFactor);
+
+        const limitedDistance = Math.min(distance, maxRadius * (1 + maxOutside));
         const x = Math.cos(angle) * limitedDistance;
         const y = Math.sin(angle) * limitedDistance;
+
         setPos({ x, y });
-        dxRef.current = x / (maxRadius * scaleFactor);
-        dyRef.current = -y / (maxRadius * scaleFactor);
+
+        const normalizedX = x / (maxRadius * (1 + maxOutside));
+        const normalizedY = -y / (maxRadius * (1 + maxOutside));
+
+        // Apply deadzone per axis
+        dxRef.current = Math.abs(normalizedX) > deadZone ? normalizedX : 0;
+        dyRef.current = Math.abs(normalizedY) > deadZone ? normalizedY : 0;
     };
 
     const finishPointer = (
@@ -215,7 +210,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             >
                 <div
                     className={`joystick-handle ${draggingLeft ? "active" : ""}`}
-                    style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px) scale(${draggingLeft ? 1.2 : 1})` }}
+                    style={{ transform: `translate(${leftPos.x}px, ${leftPos.y}px)` }}
                 />
             </div>}
 
@@ -253,7 +248,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             >
                 <div
                     className={`joystick-handle ${draggingRight ? "active" : ""}`}
-                    style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px) scale(${draggingRight ? 1.2 : 1})` }}
+                    style={{ transform: `translate(${rightPos.x}px, ${rightPos.y}px)` }}
                 />
             </div> }
 
