@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 
+/** Joystick event emission behavior */
+export const JOYSTICK_EMIT_ALWAYS = "JoystickEmitAlways";
+export const JOYSTICK_EMIT_ON_CHANGE = "JoystickEmitOnChange";
+
 interface MobileJoystickControlsProps {
     onLeftJoystickMove?: (dx: number, dy: number) => void;
     onRightJoystickMove?: (dx: number, dy: number) => void;
@@ -9,6 +13,8 @@ interface MobileJoystickControlsProps {
     onButtonB?: (active: boolean) => void;
     /** Optional: joystick update rate in Hz (default = 30) */
     joystickRateHz?: number;
+    /** Joystick event emission behavior (default = JOYSTICK_EMIT_ALWAYS) */
+    joystickEmitMode?: typeof JOYSTICK_EMIT_ALWAYS | typeof JOYSTICK_EMIT_ON_CHANGE;
 }
 
 const maxRadius = 50;
@@ -23,6 +29,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onButtonA,
                                                                                   onButtonB,
                                                                                   joystickRateHz = 30,
+                                                                                  joystickEmitMode = JOYSTICK_EMIT_ON_CHANGE,
                                                                               }) => {
     const [draggingLeft, setDraggingLeft] = useState(false);
     const [leftPos, setLeftPos] = useState({ x: 0, y: 0 });
@@ -51,6 +58,10 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const animationRef = useRef<number | null>(null);
     const lastUpdateRef = useRef(0);
 
+    // Previous joystick active state (for ON_CHANGE mode)
+    const leftActiveRef = useRef(false);
+    const rightActiveRef = useRef(false);
+
     // Visibility fade management
     const activateControls = () => {
         if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
@@ -71,25 +82,63 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     // Throttled joystick loop
     useEffect(() => {
         const intervalMs = 1000 / joystickRateHz;
+
         const loop = (timestamp: number) => {
             if (!lastUpdateRef.current || timestamp - lastUpdateRef.current >= intervalMs) {
                 const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
                 const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
-                if (ShowJoystickLeft && onLeftJoystickMove) onLeftJoystickMove(leftDx, leftDy);
-
                 const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
                 const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
-                if (ShowJoystickRight && onRightJoystickMove) onRightJoystickMove(rightDx, rightDy);
+
+                // LEFT JOYSTICK
+                if (ShowJoystickLeft && onLeftJoystickMove) {
+                    if (joystickEmitMode === JOYSTICK_EMIT_ALWAYS) {
+                        onLeftJoystickMove(leftDx, leftDy);
+                    } else {
+                        const moving = leftDx !== 0 || leftDy !== 0;
+                        if (moving) {
+                            leftActiveRef.current = true;
+                            onLeftJoystickMove(leftDx, leftDy);
+                        } else if (leftActiveRef.current) {
+                            leftActiveRef.current = false;
+                            onLeftJoystickMove(0, 0);
+                        }
+                    }
+                }
+
+                // RIGHT JOYSTICK
+                if (ShowJoystickRight && onRightJoystickMove) {
+                    if (joystickEmitMode === JOYSTICK_EMIT_ALWAYS) {
+                        onRightJoystickMove(rightDx, rightDy);
+                    } else {
+                        const moving = rightDx !== 0 || rightDy !== 0;
+                        if (moving) {
+                            rightActiveRef.current = true;
+                            onRightJoystickMove(rightDx, rightDy);
+                        } else if (rightActiveRef.current) {
+                            rightActiveRef.current = false;
+                            onRightJoystickMove(0, 0);
+                        }
+                    }
+                }
 
                 lastUpdateRef.current = timestamp;
             }
             animationRef.current = requestAnimationFrame(loop);
         };
+
         animationRef.current = requestAnimationFrame(loop);
         return () => {
             if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
         };
-    }, [onLeftJoystickMove, onRightJoystickMove, joystickRateHz]);
+    }, [
+        onLeftJoystickMove,
+        onRightJoystickMove,
+        joystickRateHz,
+        joystickEmitMode,
+        ShowJoystickLeft,
+        ShowJoystickRight,
+    ]);
 
     // Joystick computation
     const computeJoystickFromPointer = (

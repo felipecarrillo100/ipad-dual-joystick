@@ -1,36 +1,62 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type FrequencyMap = Record<string, number[]>;
 
 /**
- * Measures the frequency (Hz) of triggered events.
- * You call `trigger()` for each event and it estimates events per second.
+ * Hook to measure frequency (Hz) of multiple independent events.
+ * Call `trigger(id)` for each occurrence of an event.
  *
  * @param windowSize - Number of recent events to average over (default = 20)
+ * @param decayTime - Time in ms after which frequency goes to 0 if no events (default = 1000ms)
  */
-export function useFrequencyMeter(windowSize: number = 20) {
-    const timestamps = useRef<number[]>([]);
-    const [hertz, setHertz] = useState(0);
+export function useFrequencyMeter(windowSize: number = 20, decayTime: number = 1000) {
+    const timestamps = useRef<FrequencyMap>({});
+    const [frequencies, setFrequencies] = useState<Record<string, number>>({});
 
-    const trigger = useCallback(() => {
+    const trigger = useCallback((id: string) => {
         const now = performance.now();
-        timestamps.current.push(now);
+        if (!timestamps.current[id]) timestamps.current[id] = [];
 
-        // Keep only the last N samples
-        if (timestamps.current.length > windowSize) {
-            timestamps.current.shift();
-        }
+        const ts = timestamps.current[id];
+        ts.push(now);
 
-        // Need at least two samples to compute intervals
-        if (timestamps.current.length > 1) {
-            const intervals: number[] = [];
-            for (let i = 1; i < timestamps.current.length; i++) {
-                intervals.push(timestamps.current[i] - timestamps.current[i - 1]);
-            }
+        // Keep only the last `windowSize` timestamps
+        if (ts.length > windowSize) ts.shift();
 
+        if (ts.length > 1) {
+            const intervals = ts.slice(1).map((t, i) => t - ts[i]);
             const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-            const frequency = 1000 / avgInterval; // ms → Hz
-            setHertz(frequency);
+            const frequency = 1000 / avgInterval;
+
+            setFrequencies((prev) => ({ ...prev, [id]: frequency }));
         }
     }, [windowSize]);
 
-    return { hertz, trigger };
+    // Decay mechanism: set frequency to 0 if no events recently
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = performance.now();
+            setFrequencies((prev) => {
+                const updated: Record<string, number> = { ...prev };
+                let changed = false;
+
+                Object.keys(timestamps.current).forEach((id) => {
+                    const ts = timestamps.current[id];
+                    const last = ts[ts.length - 1];
+                    if (!last || now - last > decayTime) {
+                        if (updated[id] !== 0) {
+                            updated[id] = 0;
+                            changed = true;
+                        }
+                    }
+                });
+
+                return changed ? updated : prev;
+            });
+        }, decayTime / 2); // check twice as often as decayTime
+
+        return () => clearInterval(interval);
+    }, [decayTime]);
+
+    return { frequencies, trigger };
 }
