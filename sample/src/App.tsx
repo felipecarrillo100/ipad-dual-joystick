@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import './App.css';
 import { MobileJoystickControls } from "../../src";
+import "../../src/styles.scss";
+import {useFrequencyMeter} from "./utils/useFrequencyMeter";
 
 const App: React.FC = () => {
     const [left, setLeft] = useState({ dx: 0, dy: 0 });
     const [right, setRight] = useState({ dx: 0, dy: 0 });
     const [buttons, setButtons] = useState({ a: false, b: false, up: false, down: false });
+    const { trigger, hertz } = useFrequencyMeter();
+
 
     return (
         <>
@@ -19,6 +23,9 @@ const App: React.FC = () => {
                         <h3>Left Joystick</h3>
                         <p>dx: {left.dx.toFixed(2)}</p>
                         <p>dy: {left.dy.toFixed(2)}</p>
+
+                        <h3>Frequency</h3>
+                        <p>Hz: {hertz.toFixed(2)}</p>
                     </div>
                     <div className="joystick-state">
                         <h3>Right Joystick</h3>
@@ -36,13 +43,19 @@ const App: React.FC = () => {
 
                 {/* Joystick Controls */}
                 <MobileJoystickControls
-                    onLeftJoystickMove={(dx, dy) => setLeft({ dx, dy })}
-                    onRightJoystickMove={(dx, dy) => setRight({ dx, dy })}
-                    onUp={(active) => setButtons(b => ({ ...b, up: active }))}
+                    onLeftJoystickMove={(dx, dy) => {
+                        setLeft({ dx, dy });
+                        trigger();
+                    }}
+                    onRightJoystickMove={(dx, dy) => {
+                        setRight({ dx, dy });
+                    }}
+                    onUp={(active) => {
+                        setButtons(b => ({ ...b, up: active }));
+                    }}
                     onDown={(active) => setButtons(b => ({ ...b, down: active }))}
                     onButtonA={(active) => setButtons(b => ({ ...b, a: active }))}
                     onButtonB={(active) => setButtons(b => ({ ...b, b: active }))}
-                    dual={true}
                 />
             </div>
         </>

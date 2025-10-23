@@ -7,6 +7,8 @@ interface MobileJoystickControlsProps {
     onDown?: (active: boolean) => void;
     onButtonA?: (active: boolean) => void;
     onButtonB?: (active: boolean) => void;
+    /** Optional: joystick update rate in Hz (default = 30) */
+    joystickRateHz?: number;
 }
 
 const maxRadius = 50;
@@ -20,6 +22,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onDown,
                                                                                   onButtonA,
                                                                                   onButtonB,
+                                                                                  joystickRateHz = 30,
                                                                               }) => {
     const [draggingLeft, setDraggingLeft] = useState(false);
     const [leftPos, setLeftPos] = useState({ x: 0, y: 0 });
@@ -34,7 +37,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const [isActive, setIsActive] = useState(false);
     const fadeTimeoutRef = useRef<number | null>(null);
 
-    // Refs for joysticks
+    // Joystick state refs
     const leftJoystickRef = useRef<HTMLDivElement | null>(null);
     const leftPointerIdRef = useRef<number | null>(null);
     const leftDxRef = useRef(0);
@@ -46,35 +49,47 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const rightDyRef = useRef(0);
 
     const animationRef = useRef<number | null>(null);
+    const lastUpdateRef = useRef(0);
 
-    // Helpers to manage active opacity
+    // Visibility fade management
     const activateControls = () => {
         if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
         setIsActive(true);
     };
     const scheduleFade = () => {
         if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = setTimeout(() => setIsActive(false), 3000);
+        fadeTimeoutRef.current = window.setTimeout(() => setIsActive(false), 3000);
     };
 
-    // Continuous joystick updates
+    const ShowButtonA = typeof onButtonA === "function";
+    const ShowButtonB = typeof onButtonB === "function";
+    const ShowButtonUp = typeof onUp === "function";
+    const ShowButtonDown = typeof onDown === "function";
+    const ShowJoystickLeft = typeof onLeftJoystickMove === "function";
+    const ShowJoystickRight = typeof onRightJoystickMove === "function";
+
+    // Throttled joystick loop
     useEffect(() => {
-        const loop = () => {
-            const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
-            const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
-            if (ShowJoystickLeft && onLeftJoystickMove) onLeftJoystickMove(leftDx, leftDy);
+        const intervalMs = 1000 / joystickRateHz;
+        const loop = (timestamp: number) => {
+            if (!lastUpdateRef.current || timestamp - lastUpdateRef.current >= intervalMs) {
+                const leftDx = Math.abs(leftDxRef.current) < deadZone ? 0 : leftDxRef.current;
+                const leftDy = Math.abs(leftDyRef.current) < deadZone ? 0 : leftDyRef.current;
+                if (ShowJoystickLeft && onLeftJoystickMove) onLeftJoystickMove(leftDx, leftDy);
 
-            const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
-            const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
-            if (ShowJoystickRight && onRightJoystickMove) onRightJoystickMove(rightDx, rightDy);
+                const rightDx = Math.abs(rightDxRef.current) < deadZone ? 0 : rightDxRef.current;
+                const rightDy = Math.abs(rightDyRef.current) < deadZone ? 0 : rightDyRef.current;
+                if (ShowJoystickRight && onRightJoystickMove) onRightJoystickMove(rightDx, rightDy);
 
+                lastUpdateRef.current = timestamp;
+            }
             animationRef.current = requestAnimationFrame(loop);
         };
         animationRef.current = requestAnimationFrame(loop);
         return () => {
             if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
         };
-    }, [onLeftJoystickMove, onRightJoystickMove]);
+    }, [onLeftJoystickMove, onRightJoystickMove, joystickRateHz]);
 
     // Joystick computation
     const computeJoystickFromPointer = (
@@ -82,8 +97,8 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         clientY: number,
         el: HTMLDivElement,
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-        dxRef: ReturnType<typeof useRef>,
-        dyRef: ReturnType<typeof useRef>
+        dxRef: React.MutableRefObject<number>,
+        dyRef: React.MutableRefObject<number>
     ) => {
         const rect = el.getBoundingClientRect();
         const dx = clientX - (rect.left + rect.width / 2);
@@ -108,8 +123,8 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         pointerIdRef: React.RefObject<number | null>,
         setDragging: React.Dispatch<React.SetStateAction<boolean>>,
         setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-        dxRef: ReturnType<typeof useRef>,
-        dyRef: ReturnType<typeof useRef>,
+        dxRef: React.MutableRefObject<number>,
+        dyRef: React.MutableRefObject<number>,
         elRef: React.RefObject<HTMLDivElement | null>,
         callback?: (dx: number, dy: number) => void
     ) => {
@@ -142,9 +157,12 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             if (!el) return;
             computeJoystickFromPointer(e.clientX, e.clientY, el, setLeftPos, leftDxRef, leftDyRef);
         },
-        up: (_e: React.PointerEvent) => finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
-        cancel: (_e: React.PointerEvent) => finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
+        up: (_e: React.PointerEvent) =>
+            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
+        cancel: (_e: React.PointerEvent) =>
+            finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
     };
+
     const rightHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
@@ -162,16 +180,29 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             if (!el) return;
             computeJoystickFromPointer(e.clientX, e.clientY, el, setRightPos, rightDxRef, rightDyRef);
         },
-        up: (_e: React.PointerEvent) => finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
-        cancel: (_e: React.PointerEvent) => finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
+        up: (_e: React.PointerEvent) =>
+            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
+        cancel: (_e: React.PointerEvent) =>
+            finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
     };
 
+    // Button handlers
     const createButtonHandlers = (
         setActive: React.Dispatch<React.SetStateAction<boolean>>,
         callback?: (active: boolean) => void
     ) => ({
-        down: (e: React.PointerEvent) => { e.preventDefault(); activateControls(); setActive(true); callback?.(true); },
-        up: (e: React.PointerEvent) => { e.preventDefault(); setActive(false); callback?.(false); scheduleFade(); },
+        down: (e: React.PointerEvent) => {
+            e.preventDefault();
+            activateControls();
+            setActive(true);
+            callback?.(true);
+        },
+        up: (e: React.PointerEvent) => {
+            e.preventDefault();
+            setActive(false);
+            callback?.(false);
+            scheduleFade();
+        },
     });
 
     const upHandlers = createButtonHandlers(setIsUpActive, onUp);
@@ -179,19 +210,11 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const aHandlers = createButtonHandlers(setIsAActive, onButtonA);
     const bHandlers = createButtonHandlers(setIsBActive, onButtonB);
 
-    const ShowButtonA = typeof onButtonA === "function";
-    const ShowButtonB = typeof onButtonB === "function";
-    const ShowButtonUp = typeof onUp === "function";
-    const ShowButtonDown = typeof onDown === "function";
-    const ShowJoystickLeft = typeof onLeftJoystickMove === "function";
-    const ShowJoystickRight = typeof onRightJoystickMove === "function";
-
     return (
         <div
             className="mobile-joystick-controls"
             style={{ opacity: isActive ? 1 : 0.2, transition: "opacity 0.5s ease" }}
         >
-            {/* Left Joystick */}
             {ShowJoystickLeft && (
                 <div
                     ref={leftJoystickRef}
@@ -209,7 +232,6 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                 </div>
             )}
 
-            {/* Left Buttons */}
             <div className="button-bar left-buttons">
                 {ShowButtonUp && (
                     <div
@@ -235,7 +257,6 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                 )}
             </div>
 
-            {/* Right Joystick */}
             {ShowJoystickRight && (
                 <div
                     ref={rightJoystickRef}
@@ -253,7 +274,6 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                 </div>
             )}
 
-            {/* Right Buttons */}
             <div className="button-bar right-buttons">
                 {ShowButtonA && (
                     <div
