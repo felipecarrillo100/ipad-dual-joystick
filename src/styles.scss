@@ -1,4 +1,37 @@
-// ===== COLOR VARIABLES =====
+.mobile-joystick-controls,
+.mobile-joystick-controls * {
+  touch-action: none;
+  pointer-events: auto; // children handle input
+  -webkit-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ===================== iOS FIXES — ADDED ===================== */
+.mobile-joystick-controls,
+.mobile-joystick-controls *,
+.mobile-joystick-controls img,
+.mobile-joystick-controls button,
+.mobile-joystick-controls span,
+.mobile-joystick-controls div,
+.mobile-joystick-controls svg {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  -webkit-touch-callout: none !important;
+  touch-action: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Prevent outline flash on tap */
+.mobile-joystick-controls *:focus {
+  outline: none !important;
+}
+/* ============================================================= */
+
+/* ===== COLOR VARIABLES ===== */
 $joystick-bg: rgba(0, 0, 0, 0.3);
 $joystick-handle-bg: rgba(200, 200, 200, 0.8);
 $joystick-handle-active-bg: rgba(234, 226, 226, 0.95);
@@ -8,7 +41,7 @@ $button-active-bg: rgba(165, 147, 147, 0.6);
 $button-color: white;
 $button-active-color: black;
 
-// ===== LAYOUT VARIABLES =====
+/* ===== LAYOUT VARIABLES ===== */
 $joystick-size: 120px;
 $joystick-handle-size: 50px;
 $button-size: 60px;
@@ -17,13 +50,13 @@ $joystick-offset-vertical: 30px;
 $joystick-offset-horizontal: 30px;
 $button-offset-vertical: 160px;
 
-// ===== FADE SETTINGS =====
+/* ===== FADE SETTINGS ===== */
 $control-idle-opacity: 0.2;
 $control-active-opacity: 1;
 $fade-duration: 0.5s;
 $touch-action: none;
 
-// ===== STYLES =====
+/* ===== STYLES ===== */
 .mobile-joystick-controls {
   position: fixed;
   width: 100vw;
