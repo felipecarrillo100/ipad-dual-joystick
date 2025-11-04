@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import './App.css';
 import { MobileJoystickControls } from "../../src";
-import "../../src/styles.scss";
 import {useFrequencyMeter} from "./utils/useFrequencyMeter";
 import {JOYSTICK_EMIT_ON_CHANGE} from "../../src/MobileJoystickControls";
+import "../../src/styles.scss";
 
 const App: React.FC = () => {
     const [left, setLeft] = useState({ dx: 0, dy: 0 });
@@ -45,6 +45,7 @@ const App: React.FC = () => {
 
                 {/* Joystick Controls */}
                 <MobileJoystickControls
+                    autoFade={true}
                     joystickEmitMode={JOYSTICK_EMIT_ON_CHANGE}
                     onLeftJoystickMove={(dx, dy) => {
                         setLeft({ dx, dy });

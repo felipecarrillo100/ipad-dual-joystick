@@ -34,8 +34,7 @@ import React from "react";
 import { MobileJoystickControls } from "ipad-dual-joystick";
 // Import SCSS/CSS styling
 import "ipad-dual-joystick/dist/styles.scss";
-// Optionally, import styles-fade for the controls to hide when inactive for a few seconds
-import "ipad-dual-joystick/dist/styles-fade.scss";
+
 const MyGame: React.FC = () => {
     const handleLeftMove = (dx: number, dy: number) => {
         console.log("Left joystick:", dx, dy);
@@ -58,6 +57,7 @@ const MyGame: React.FC = () => {
             onDown={handleDown}                   // optional
             onButtonA={handleA}                   // optional
             onButtonB={handleB}                   // optional
+            autoFade={true}                       // optional
         />
     );
 };
@@ -105,14 +105,15 @@ Variables you can customize:
 ## Props
 Optional callbacks: if you don’t provide a callback, the corresponding joystick or button will not render.
 
-| Prop                  | Type                               | Optional | Description                              |
-| --------------------- | ---------------------------------- |----------| ---------------------------------------- |
-| `onLeftJoystickMove`  | `(dx: number, dy: number) => void` | Yes      | Callback for left joystick movement      |
-| `onRightJoystickMove` | `(dx: number, dy: number) => void` | Yes      | Callback for right joystick movement     |
-| `onUp`                | `(active: boolean) => void`        | Yes      | Callback for "Up" button press/release   |
-| `onDown`              | `(active: boolean) => void`        | Yes      | Callback for "Down" button press/release |
-| `onButtonA`           | `(active: boolean) => void`        | Yes      | Callback for "A" button press/release    |
-| `onButtonB`           | `(active: boolean) => void`        | Yes      | Callback for "B" button press/release    |
+| Prop                  | Type                               | Optional | Description                                |
+|-----------------------| ---------------------------------- |----------|--------------------------------------------|
+| `onLeftJoystickMove`  | `(dx: number, dy: number) => void` | Yes      | Callback for left joystick movement        |
+| `onRightJoystickMove` | `(dx: number, dy: number) => void` | Yes      | Callback for right joystick movement       |
+| `onUp`                | `(active: boolean) => void`        | Yes      | Callback for "Up" button press/release     |
+| `onDown`              | `(active: boolean) => void`        | Yes      | Callback for "Down" button press/release   |
+| `onButtonA`           | `(active: boolean) => void`        | Yes      | Callback for "A" button press/release      |
+| `onButtonB`           | `(active: boolean) => void`        | Yes      | Callback for "B" button press/release      |
+| `autoFade`            | `boolean`        | Yes      | If True fade after 5 seconds of inactivity |
 
 
 ## License

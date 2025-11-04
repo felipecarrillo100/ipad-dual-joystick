@@ -1,9 +1,7 @@
-// MobileJoystickControls.scss
-
 // ===== COLOR VARIABLES =====
 $joystick-bg: rgba(0, 0, 0, 0.3);
 $joystick-handle-bg: rgba(200, 200, 200, 0.8);
-$joystick-handle-active-bg: rgba(234, 226, 226, 0.9);
+$joystick-handle-active-bg: rgba(234, 226, 226, 0.95);
 
 $button-bg: rgba(0, 0, 0, 0.3);
 $button-active-bg: rgba(165, 147, 147, 0.6);
@@ -19,18 +17,37 @@ $joystick-offset-vertical: 30px;
 $joystick-offset-horizontal: 30px;
 $button-offset-vertical: 160px;
 
+// ===== FADE SETTINGS =====
+$control-idle-opacity: 0.2;
+$control-active-opacity: 1;
+$fade-duration: 0.5s;
+$touch-action: none;
+
 // ===== STYLES =====
 .mobile-joystick-controls {
   position: fixed;
   width: 100vw;
   height: 100vh;
-  touch-action: none;
   pointer-events: none;
+  touch-action: $touch-action;
   user-select: none;
-  -webkit-user-select: none;       // iOS
-  -webkit-touch-callout: none;     // iOS magnifier
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 
+  opacity: $control-active-opacity; // default: NOT faded
+  transition: opacity $fade-duration ease;
+
+  // Autofade mode enabled → use faded idle state
+  &.autofade {
+    opacity: $control-idle-opacity;
+
+    &.active {
+      opacity: $control-active-opacity;
+    }
+  }
+
+  // ===== JOYSTICKS =====
   .joystick {
     pointer-events: auto;
     position: fixed;
@@ -41,16 +58,14 @@ $button-offset-vertical: 160px;
     display: flex;
     align-items: center;
     justify-content: center;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
     z-index: 1000;
+    touch-action: none;
 
     &.left-joystick {
       bottom: $joystick-offset-vertical;
       left: $joystick-offset-horizontal;
     }
+
     &.right-joystick {
       bottom: $joystick-offset-vertical;
       right: $joystick-offset-horizontal;
@@ -61,8 +76,6 @@ $button-offset-vertical: 160px;
       height: $joystick-handle-size;
       border-radius: 50%;
       background-color: $joystick-handle-bg;
-
-      // Remove scale transition, instant response
       transition: none;
 
       &.active {
@@ -71,6 +84,7 @@ $button-offset-vertical: 160px;
     }
   }
 
+  // ===== BUTTONS =====
   .button-bar {
     pointer-events: auto;
     display: flex;
@@ -100,16 +114,13 @@ $button-offset-vertical: 160px;
       display: flex;
       align-items: center;
       justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
       touch-action: none;
-      transition: background-color 0.1s ease, color 0.1s ease;
+      transition: background-color 0.1s ease, color 0.1s ease, transform 0.1s ease;
 
       &.active {
         background-color: $button-active-bg;
         color: $button-active-color;
+        transform: scale(1.15);
       }
     }
   }

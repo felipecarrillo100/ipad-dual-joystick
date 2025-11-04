@@ -13,13 +13,19 @@ interface MobileJoystickControlsProps {
     onButtonB?: (active: boolean) => void;
     /** Optional: joystick update rate in Hz (default = 30) */
     joystickRateHz?: number;
-    /** Joystick event emission behavior (default = JOYSTICK_EMIT_ALWAYS) */
+    /** Joystick event emission behavior (default = JOYSTICK_EMIT_ON_CHANGE) */
     joystickEmitMode?: typeof JOYSTICK_EMIT_ALWAYS | typeof JOYSTICK_EMIT_ON_CHANGE;
+    /**
+     * autoFade: if undefined or true => autofade enabled (default).
+     * If false => no autofade (controls remain at idle opacity unless you toggle isActive externally).
+     */
+    autoFade?: boolean;
 }
 
 const maxRadius = 50;
 const deadZone = 0.1;
 const maxOutside = 0.35;
+const AUTO_FADE_MS = 3000;
 
 export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onLeftJoystickMove,
@@ -30,21 +36,25 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
                                                                                   onButtonB,
                                                                                   joystickRateHz = 30,
                                                                                   joystickEmitMode = JOYSTICK_EMIT_ON_CHANGE,
+                                                                                  autoFade = true,
                                                                               }) => {
+    // visual dragging state
     const [draggingLeft, setDraggingLeft] = useState(false);
     const [leftPos, setLeftPos] = useState({ x: 0, y: 0 });
     const [draggingRight, setDraggingRight] = useState(false);
     const [rightPos, setRightPos] = useState({ x: 0, y: 0 });
 
+    // button active states (visual)
     const [isUpActive, setIsUpActive] = useState(false);
     const [isDownActive, setIsDownActive] = useState(false);
     const [isAActive, setIsAActive] = useState(false);
     const [isBActive, setIsBActive] = useState(false);
 
+    // active flag used by CSS (.active)
     const [isActive, setIsActive] = useState(false);
     const fadeTimeoutRef = useRef<number | null>(null);
 
-    // Joystick state refs
+    // joystick internals / refs for emission
     const leftJoystickRef = useRef<HTMLDivElement | null>(null);
     const leftPointerIdRef = useRef<number | null>(null);
     const leftDxRef = useRef(0);
@@ -58,20 +68,11 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const animationRef = useRef<number | null>(null);
     const lastUpdateRef = useRef(0);
 
-    // Previous joystick active state (for ON_CHANGE mode)
+    // ON_CHANGE tracking
     const leftActiveRef = useRef(false);
     const rightActiveRef = useRef(false);
 
-    // Visibility fade management
-    const activateControls = () => {
-        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
-        setIsActive(true);
-    };
-    const scheduleFade = () => {
-        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = window.setTimeout(() => setIsActive(false), 3000);
-    };
-
+    // show/hide based on supplied callbacks
     const ShowButtonA = typeof onButtonA === "function";
     const ShowButtonB = typeof onButtonB === "function";
     const ShowButtonUp = typeof onUp === "function";
@@ -79,7 +80,26 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const ShowJoystickLeft = typeof onLeftJoystickMove === "function";
     const ShowJoystickRight = typeof onRightJoystickMove === "function";
 
-    // Throttled joystick loop
+    // --- Fade helpers (preserve original behavior) ---
+    const activateControls = () => {
+        if (fadeTimeoutRef.current) {
+            window.clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+        setIsActive(true);
+    };
+
+    const scheduleFade = () => {
+        // Only used if autoFade enabled
+        if (!autoFade) return;
+        if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
+        fadeTimeoutRef.current = window.setTimeout(() => {
+            fadeTimeoutRef.current = null;
+            setIsActive(false);
+        }, AUTO_FADE_MS) as unknown as number;
+    };
+
+    // --- Emission loop (throttled via requestAnimationFrame & timestamp) ---
     useEffect(() => {
         const intervalMs = 1000 / joystickRateHz;
 
@@ -130,6 +150,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         animationRef.current = requestAnimationFrame(loop);
         return () => {
             if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
         };
     }, [
         onLeftJoystickMove,
@@ -140,7 +161,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         ShowJoystickRight,
     ]);
 
-    // Joystick computation
+    // --- joystick computation (preserve math) ---
     const computeJoystickFromPointer = (
         clientX: number,
         clientY: number,
@@ -178,17 +199,23 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
         callback?: (dx: number, dy: number) => void
     ) => {
         const el = elRef.current;
-        if (el && pointerIdRef.current !== null) el.releasePointerCapture?.(pointerIdRef.current);
+        if (el && pointerIdRef.current !== null) {
+            try {
+                el.releasePointerCapture?.(pointerIdRef.current);
+            } catch {
+                // ignore if not captured
+            }
+        }
         pointerIdRef.current = null;
         setDragging(false);
         setPos({ x: 0, y: 0 });
         dxRef.current = 0;
         dyRef.current = 0;
         if (callback) callback(0, 0);
-        scheduleFade();
+        if (autoFade) scheduleFade();
     };
 
-    // Joystick handlers
+    // --- left handlers ---
     const leftHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
@@ -212,6 +239,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             finishPointer(leftPointerIdRef, setDraggingLeft, setLeftPos, leftDxRef, leftDyRef, leftJoystickRef, onLeftJoystickMove),
     };
 
+    // --- right handlers ---
     const rightHandlers = {
         down: (e: React.PointerEvent) => {
             e.preventDefault();
@@ -235,7 +263,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             finishPointer(rightPointerIdRef, setDraggingRight, setRightPos, rightDxRef, rightDyRef, rightJoystickRef, onRightJoystickMove),
     };
 
-    // Button handlers
+    // --- button helpers (preserve original behavior) ---
     const createButtonHandlers = (
         setActive: React.Dispatch<React.SetStateAction<boolean>>,
         callback?: (active: boolean) => void
@@ -250,7 +278,7 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
             e.preventDefault();
             setActive(false);
             callback?.(false);
-            scheduleFade();
+            if (autoFade) scheduleFade();
         },
     });
 
@@ -259,10 +287,24 @@ export const MobileJoystickControls: React.FC<MobileJoystickControlsProps> = ({
     const aHandlers = createButtonHandlers(setIsAActive, onButtonA);
     const bHandlers = createButtonHandlers(setIsBActive, onButtonB);
 
+    // --- cleanup on unmount ---
+    useEffect(() => {
+        return () => {
+            if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+            if (fadeTimeoutRef.current) {
+                window.clearTimeout(fadeTimeoutRef.current);
+                fadeTimeoutRef.current = null;
+            }
+        };
+    }, []);
+
+    // CSS class for autofade presence
+    const fadeClass = autoFade ? "autofade" : "";
+
     return (
         <div
-            className="mobile-joystick-controls"
-            style={{ opacity: isActive ? 1 : 0.2, transition: "opacity 0.5s ease" }}
+            className={`mobile-joystick-controls ${isActive ? "active" : ""} ${fadeClass}`}
+            // prevent pointer events passing through except joysticks/buttons (SCSS uses pointer-events)
         >
             {ShowJoystickLeft && (
                 <div

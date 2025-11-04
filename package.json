@@ -1,7 +1,7 @@
 {
   "name": "ipad-dual-joystick",
   "description": "A React package that implements a dual joystick for ipads.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
